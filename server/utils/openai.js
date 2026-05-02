@@ -1,8 +1,8 @@
 const OpenAI = require("openai");
 
-// Using Ollama's OpenAI-compatible local API
+// Ollama API key is configurable via env (defaults to "ollama" for local use)
 const openai = new OpenAI({
-  apiKey:  "ollama",  // Ollama doesn't need a real key
+  apiKey:  process.env.OLLAMA_API_KEY || "ollama",
   baseURL: process.env.OLLAMA_BASE_URL || "http://localhost:11434/v1"
 });
 

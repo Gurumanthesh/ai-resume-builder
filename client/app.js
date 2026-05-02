@@ -419,13 +419,34 @@ async function improveDescription(btn) {
 }
 
 // ─────────────────────────────────────────────
-// API Helper
+// API Helper (CSRF-protected, relative URLs only)
 // ─────────────────────────────────────────────
+let csrfToken = null;
+
+async function initCSRF() {
+  try {
+    const res  = await fetch('/api/csrf-token');
+    const data = await res.json();
+    csrfToken  = data.token;
+  } catch (e) {
+    console.warn('CSRF token fetch failed:', e);
+  }
+}
+
+// Only allow relative API paths to prevent SSRF
+const ALLOWED_ENDPOINTS = ['generate-summary', 'improve-content'];
+
 async function callAPI(endpoint, body) {
+  if (!ALLOWED_ENDPOINTS.includes(endpoint)) {
+    throw new Error('Invalid API endpoint');
+  }
   const res = await fetch(`/api/${endpoint}`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body)
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken || ''
+    },
+    body: JSON.stringify(body)
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'API request failed');
@@ -444,5 +465,6 @@ function submitForm() {
 // Init
 // ─────────────────────────────────────────────
 document.getElementById('resume-form').addEventListener('input', debouncedRender);
+initCSRF();
 loadFromLocalStorage();
 renderPreview();
