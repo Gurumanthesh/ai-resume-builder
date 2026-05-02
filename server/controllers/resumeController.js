@@ -1,1 +1,80 @@
-// Resume controller logic — populated in Phase 4
+const openai = require("../utils/openai");
+
+// ── Shared: call OpenAI chat completion ──
+async function chat(systemPrompt, userPrompt) {
+  const response = await openai.chat.completions.create({
+    model: "gpt-3.5-turbo",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user",   content: userPrompt   }
+    ],
+    temperature: 0.7,
+    max_tokens: 400
+  });
+  return response.choices[0].message.content.trim();
+}
+
+// ── POST /api/generate-summary ──
+// Body: { personal, experience, skills }
+async function generateSummary(req, res) {
+  const { personal, experience, skills } = req.body;
+
+  if (!personal?.fullName) {
+    return res.status(400).json({ error: "fullName is required" });
+  }
+
+  const userPrompt = `
+Name: ${personal.fullName}
+Skills: ${skills?.technical || "N/A"}
+Experience: ${(experience || [])
+    .map(e => `${e.title} at ${e.company} (${e.duration})`)
+    .join(", ") || "N/A"}
+
+Write a 3-sentence professional resume summary for this person.
+Be concise, use active voice, and highlight their strengths.
+`.trim();
+
+  try {
+    const summary = await chat(
+      "You are an expert resume writer. Write professional, ATS-optimized resume summaries.",
+      userPrompt
+    );
+    res.json({ summary });
+  } catch (err) {
+    console.error("generate-summary error:", err.message);
+    res.status(500).json({ error: "Failed to generate summary. Check your OpenAI API key." });
+  }
+}
+
+// ── POST /api/improve-content ──
+// Body: { type: "bullets"|"description", content: string }
+async function improveContent(req, res) {
+  const { type, content } = req.body;
+
+  if (!content?.trim()) {
+    return res.status(400).json({ error: "content is required" });
+  }
+
+  const prompts = {
+    bullets: {
+      system: "You are an expert resume writer. Improve bullet points to be impactful, quantified, and ATS-friendly.",
+      user:   `Improve these resume bullet points. Return only the improved bullets, one per line starting with •:\n\n${content}`
+    },
+    description: {
+      system: "You are an expert resume writer. Improve project descriptions to be concise and impactful.",
+      user:   `Improve this project description for a resume. Return only the improved description:\n\n${content}`
+    }
+  };
+
+  const prompt = prompts[type] || prompts.bullets;
+
+  try {
+    const improved = await chat(prompt.system, prompt.user);
+    res.json({ improved });
+  } catch (err) {
+    console.error("improve-content error:", err.message);
+    res.status(500).json({ error: "Failed to improve content. Check your OpenAI API key." });
+  }
+}
+
+module.exports = { generateSummary, improveContent };
