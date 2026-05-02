@@ -283,6 +283,28 @@ body {
 .btn-add:hover { background: var(--primary-light); }
 
 /* ─────────────────────────────────────────────
+   AI Suggest Button
+───────────────────────────────────────────── */
+.btn-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 7px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #6c63ff, #a78bfa);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition);
+  letter-spacing: 0.02em;
+}
+.btn-ai:hover    { opacity: 0.88; transform: translateY(-1px); }
+.btn-ai:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+/* ─────────────────────────────────────────────
    Navigation Buttons
 ───────────────────────────────────────────── */
 .form-nav {
@@ -484,6 +506,13 @@ body {
 .rv-skills-grid { display: flex; flex-direction: column; gap: 4px; }
 .rv-skill-row   { font-size: 0.84rem; }
 .rv-skill-row strong { color: #0a0a0a; }
+
+.rv-summary {
+  font-size: 0.86rem;
+  color: #222;
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
 
 /* ─────────────────────────────────────────────
    Responsive

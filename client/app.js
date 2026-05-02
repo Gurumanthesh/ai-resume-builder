@@ -97,6 +97,7 @@ const ENTRY_TEMPLATES = {
       </div>
       <div class="form-group"><label>Responsibilities / Achievements</label>
         <textarea class="exp-bullets" rows="4" placeholder="• Built REST APIs that reduced latency by 30%&#10;• Led a team of 4 engineers..."></textarea>
+        <button type="button" class="btn-ai" onclick="improveBullets(this)">✨ Improve Bullets</button>
       </div>
     </div>`,
 
@@ -111,6 +112,7 @@ const ENTRY_TEMPLATES = {
       </div>
       <div class="form-group"><label>Description</label>
         <textarea class="proj-desc" rows="3" placeholder="Describe what the project does and your role..."></textarea>
+        <button type="button" class="btn-ai" onclick="improveDescription(this)">✨ Improve Description</button>
       </div>
     </div>`
 };
@@ -307,10 +309,13 @@ function renderPreview() {
         ${renderBullets(pr.desc)}
       </div>`).join('');
 
+  const summaryText = document.getElementById('aiSummary')?.value.trim();
+
   container.innerHTML = `
     <div class="resume-doc" id="resume-doc">
       <div class="rv-name">${sanitize(p.fullName)}</div>
       <div class="rv-contact">${contactParts}</div>
+      ${summaryText ? `<div class="rv-section"><div class="rv-section-title">Summary</div><p class="rv-summary">${sanitize(summaryText)}</p></div>` : ''}
       ${eduHTML    ? `<div class="rv-section"><div class="rv-section-title">Education</div>${eduHTML}</div>`                                   : ''}
       ${skillsHTML ? `<div class="rv-section"><div class="rv-section-title">Skills</div><div class="rv-skills-grid">${skillsHTML}</div></div>` : ''}
       ${expHTML    ? `<div class="rv-section"><div class="rv-section-title">Experience</div>${expHTML}</div>`                                  : ''}
@@ -322,6 +327,96 @@ const debouncedRender = debounce(() => {
   saveToLocalStorage();
   renderPreview();
 }, 150);
+
+// ─────────────────────────────────────────────
+// AI Loading State Helper
+// ─────────────────────────────────────────────
+function setButtonLoading(btn, loading) {
+  btn.disabled = loading;
+  btn.dataset.original = btn.dataset.original || btn.textContent;
+  btn.textContent = loading ? '⏳ Thinking...' : btn.dataset.original;
+}
+
+// ─────────────────────────────────────────────
+// AI: Generate Professional Summary
+// ─────────────────────────────────────────────
+async function generateSummary() {
+  const btn  = document.getElementById('btn-gen-summary');
+  const data = collectFormData();
+
+  if (!data.personal.fullName) {
+    showToast('Please enter your name first', 'error');
+    return;
+  }
+
+  setButtonLoading(btn, true);
+  try {
+    const { summary } = await callAPI('generate-summary', {
+      personal:   data.personal,
+      skills:     data.skills,
+      experience: data.experience
+    });
+    document.getElementById('aiSummary').value = summary;
+    renderPreview();
+    showToast('Summary generated! ✨');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+// ─────────────────────────────────────────────
+// AI: Improve Bullet Points
+// ─────────────────────────────────────────────
+async function improveBullets(btn) {
+  const textarea = btn.previousElementSibling;
+  if (!textarea?.value.trim()) {
+    showToast('Please enter some bullet points first', 'error');
+    return;
+  }
+
+  setButtonLoading(btn, true);
+  try {
+    const { improved } = await callAPI('improve-content', {
+      type:    'bullets',
+      content: textarea.value
+    });
+    textarea.value = improved;
+    renderPreview();
+    showToast('Bullets improved! ✨');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+// ─────────────────────────────────────────────
+// AI: Improve Project Description
+// ─────────────────────────────────────────────
+async function improveDescription(btn) {
+  const textarea = btn.previousElementSibling;
+  if (!textarea?.value.trim()) {
+    showToast('Please enter a description first', 'error');
+    return;
+  }
+
+  setButtonLoading(btn, true);
+  try {
+    const { improved } = await callAPI('improve-content', {
+      type:    'description',
+      content: textarea.value
+    });
+    textarea.value = improved;
+    renderPreview();
+    showToast('Description improved! ✨');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
 
 // ─────────────────────────────────────────────
 // API Helper

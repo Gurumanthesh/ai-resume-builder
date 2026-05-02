@@ -62,6 +62,12 @@
                 <input type="url" id="github" placeholder="https://github.com/..." />
               </div>
             </div>
+            <!-- AI: Generate Summary -->
+            <div class="form-group" style="margin-top:8px">
+              <label for="aiSummary">Professional Summary</label>
+              <textarea id="aiSummary" rows="3" placeholder="Click ✨ Generate to create an AI-powered summary..."></textarea>
+              <button type="button" class="btn-ai" id="btn-gen-summary" onclick="generateSummary()">✨ Generate Summary</button>
+            </div>
           </div>
 
           <!-- Step 2: Education -->
@@ -137,6 +143,7 @@
                 <div class="form-group">
                   <label>Responsibilities / Achievements</label>
                   <textarea class="exp-bullets" rows="4" placeholder="• Built REST APIs that reduced latency by 30%&#10;• Led a team of 4 engineers..."></textarea>
+                  <button type="button" class="btn-ai" onclick="improveBullets(this)">✨ Improve Bullets</button>
                 </div>
               </div>
             </div>
@@ -169,6 +176,7 @@
                 <div class="form-group">
                   <label>Description</label>
                   <textarea class="proj-desc" rows="3" placeholder="Describe what the project does and your role..."></textarea>
+                  <button type="button" class="btn-ai" onclick="improveDescription(this)">✨ Improve Description</button>
                 </div>
               </div>
             </div>
