@@ -1,9 +1,9 @@
 const OpenAI = require("openai");
 
-if (!process.env.OPENAI_API_KEY) {
-  console.warn("⚠️  OPENAI_API_KEY is not set in .env");
-}
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Using Ollama's OpenAI-compatible local API
+const openai = new OpenAI({
+  apiKey:  "ollama",  // Ollama doesn't need a real key
+  baseURL: process.env.OLLAMA_BASE_URL || "http://localhost:11434/v1"
+});
 
 module.exports = openai;
