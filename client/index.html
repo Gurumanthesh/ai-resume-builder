@@ -4,179 +4,202 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Resume Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="app-container">
-      <!-- Header -->
-      <header>
-        <h1>🧠 AI Resume Builder</h1>
-        <p>Build a professional resume in minutes</p>
-      </header>
+    <!-- Header -->
+    <header class="main-header">
+      <h1>🧠 AI Resume Builder</h1>
+      <p>Build a professional resume in minutes</p>
+    </header>
 
-      <!-- Step Indicators -->
-      <div class="steps-indicator">
-        <div class="step active" data-step="1">1<span>Personal</span></div>
-        <div class="step" data-step="2">2<span>Education</span></div>
-        <div class="step" data-step="3">3<span>Skills</span></div>
-        <div class="step" data-step="4">4<span>Experience</span></div>
-        <div class="step" data-step="5">5<span>Projects</span></div>
+    <div class="app-layout">
+
+      <!-- LEFT: Form Panel -->
+      <div class="form-panel">
+
+        <!-- Step Indicators -->
+        <div class="steps-indicator">
+          <div class="step active" data-step="1">1<span>Personal</span></div>
+          <div class="step" data-step="2">2<span>Education</span></div>
+          <div class="step" data-step="3">3<span>Skills</span></div>
+          <div class="step" data-step="4">4<span>Experience</span></div>
+          <div class="step" data-step="5">5<span>Projects</span></div>
+        </div>
+
+        <!-- Form -->
+        <form id="resume-form">
+
+          <!-- Step 1: Personal Info -->
+          <div class="form-step active" id="step-1">
+            <h2>Personal Information</h2>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" placeholder="John Doe" />
+              </div>
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="john@example.com" />
+              </div>
+              <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="tel" id="phone" placeholder="+1 234 567 8900" />
+              </div>
+              <div class="form-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" placeholder="City, Country" />
+              </div>
+              <div class="form-group">
+                <label for="linkedin">LinkedIn URL</label>
+                <input type="url" id="linkedin" placeholder="https://linkedin.com/in/..." />
+              </div>
+              <div class="form-group">
+                <label for="github">GitHub URL</label>
+                <input type="url" id="github" placeholder="https://github.com/..." />
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Education -->
+          <div class="form-step" id="step-2">
+            <h2>Education</h2>
+            <div id="education-list">
+              <div class="dynamic-entry" data-index="0">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Degree</label>
+                    <input type="text" class="edu-degree" placeholder="B.Sc. Computer Science" />
+                  </div>
+                  <div class="form-group">
+                    <label>Institution</label>
+                    <input type="text" class="edu-institution" placeholder="MIT" />
+                  </div>
+                  <div class="form-group">
+                    <label>Year</label>
+                    <input type="text" class="edu-year" placeholder="2020 - 2024" />
+                  </div>
+                  <div class="form-group">
+                    <label>GPA (optional)</label>
+                    <input type="text" class="edu-gpa" placeholder="3.8 / 4.0" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn-add" onclick="addEntry('education')">+ Add Education</button>
+          </div>
+
+          <!-- Step 3: Skills -->
+          <div class="form-step" id="step-3">
+            <h2>Skills</h2>
+            <div class="form-group">
+              <label for="technicalSkills">Technical Skills</label>
+              <input type="text" id="technicalSkills" placeholder="JavaScript, Python, React, Node.js" />
+              <small>Separate skills with commas</small>
+            </div>
+            <div class="form-group">
+              <label for="softSkills">Soft Skills</label>
+              <input type="text" id="softSkills" placeholder="Leadership, Communication, Problem Solving" />
+              <small>Separate skills with commas</small>
+            </div>
+            <div class="form-group">
+              <label for="languages">Languages</label>
+              <input type="text" id="languages" placeholder="English (Fluent), Spanish (Intermediate)" />
+            </div>
+          </div>
+
+          <!-- Step 4: Experience -->
+          <div class="form-step" id="step-4">
+            <h2>Work Experience</h2>
+            <div id="experience-list">
+              <div class="dynamic-entry" data-index="0">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Job Title</label>
+                    <input type="text" class="exp-title" placeholder="Software Engineer" />
+                  </div>
+                  <div class="form-group">
+                    <label>Company</label>
+                    <input type="text" class="exp-company" placeholder="Google" />
+                  </div>
+                  <div class="form-group">
+                    <label>Duration</label>
+                    <input type="text" class="exp-duration" placeholder="Jan 2022 - Present" />
+                  </div>
+                  <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" class="exp-location" placeholder="Remote / City" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Responsibilities / Achievements</label>
+                  <textarea class="exp-bullets" rows="4" placeholder="• Built REST APIs that reduced latency by 30%&#10;• Led a team of 4 engineers..."></textarea>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn-add" onclick="addEntry('experience')">+ Add Experience</button>
+          </div>
+
+          <!-- Step 5: Projects -->
+          <div class="form-step" id="step-5">
+            <h2>Projects</h2>
+            <div id="projects-list">
+              <div class="dynamic-entry" data-index="0">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Project Name</label>
+                    <input type="text" class="proj-name" placeholder="AI Resume Builder" />
+                  </div>
+                  <div class="form-group">
+                    <label>Tech Stack</label>
+                    <input type="text" class="proj-tech" placeholder="Node.js, React, OpenAI" />
+                  </div>
+                  <div class="form-group">
+                    <label>Live URL (optional)</label>
+                    <input type="url" class="proj-url" placeholder="https://..." />
+                  </div>
+                  <div class="form-group">
+                    <label>GitHub URL (optional)</label>
+                    <input type="url" class="proj-github" placeholder="https://github.com/..." />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Description</label>
+                  <textarea class="proj-desc" rows="3" placeholder="Describe what the project does and your role..."></textarea>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="btn-add" onclick="addEntry('projects')">+ Add Project</button>
+          </div>
+
+          <!-- Navigation Buttons -->
+          <div class="form-nav">
+            <button type="button" id="btn-back" class="btn-secondary" onclick="changeStep(-1)" style="display:none">← Back</button>
+            <button type="button" id="btn-next" class="btn-primary" onclick="changeStep(1)">Next →</button>
+            <button type="button" id="btn-submit" class="btn-primary" style="display:none" onclick="submitForm()">Build Resume ✨</button>
+          </div>
+
+        </form>
       </div>
 
-      <!-- Form -->
-      <form id="resume-form">
-
-        <!-- Step 1: Personal Info -->
-        <div class="form-step active" id="step-1">
-          <h2>Personal Information</h2>
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="fullName">Full Name</label>
-              <input type="text" id="fullName" placeholder="John Doe" />
-            </div>
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" id="email" placeholder="john@example.com" />
-            </div>
-            <div class="form-group">
-              <label for="phone">Phone</label>
-              <input type="tel" id="phone" placeholder="+1 234 567 8900" />
-            </div>
-            <div class="form-group">
-              <label for="location">Location</label>
-              <input type="text" id="location" placeholder="City, Country" />
-            </div>
-            <div class="form-group">
-              <label for="linkedin">LinkedIn URL</label>
-              <input type="url" id="linkedin" placeholder="https://linkedin.com/in/..." />
-            </div>
-            <div class="form-group">
-              <label for="github">GitHub URL</label>
-              <input type="url" id="github" placeholder="https://github.com/..." />
-            </div>
+      <!-- RIGHT: Live Preview Panel -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span>📄 Live Preview</span>
+          <span class="preview-badge">ATS Friendly</span>
+        </div>
+        <div class="resume-preview" id="resume-preview">
+          <!-- Rendered by app.js -->
+          <div class="preview-placeholder">
+            <p>👆 Start filling the form to see your resume here</p>
           </div>
         </div>
+      </div>
 
-        <!-- Step 2: Education -->
-        <div class="form-step" id="step-2">
-          <h2>Education</h2>
-          <div id="education-list">
-            <div class="dynamic-entry" data-index="0">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Degree</label>
-                  <input type="text" class="edu-degree" placeholder="B.Sc. Computer Science" />
-                </div>
-                <div class="form-group">
-                  <label>Institution</label>
-                  <input type="text" class="edu-institution" placeholder="MIT" />
-                </div>
-                <div class="form-group">
-                  <label>Year</label>
-                  <input type="text" class="edu-year" placeholder="2020 - 2024" />
-                </div>
-                <div class="form-group">
-                  <label>GPA (optional)</label>
-                  <input type="text" class="edu-gpa" placeholder="3.8 / 4.0" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <button type="button" class="btn-add" onclick="addEntry('education')">+ Add Education</button>
-        </div>
-
-        <!-- Step 3: Skills -->
-        <div class="form-step" id="step-3">
-          <h2>Skills</h2>
-          <div class="form-group">
-            <label for="technicalSkills">Technical Skills</label>
-            <input type="text" id="technicalSkills" placeholder="JavaScript, Python, React, Node.js" />
-            <small>Separate skills with commas</small>
-          </div>
-          <div class="form-group">
-            <label for="softSkills">Soft Skills</label>
-            <input type="text" id="softSkills" placeholder="Leadership, Communication, Problem Solving" />
-            <small>Separate skills with commas</small>
-          </div>
-          <div class="form-group">
-            <label for="languages">Languages</label>
-            <input type="text" id="languages" placeholder="English (Fluent), Spanish (Intermediate)" />
-          </div>
-        </div>
-
-        <!-- Step 4: Experience -->
-        <div class="form-step" id="step-4">
-          <h2>Work Experience</h2>
-          <div id="experience-list">
-            <div class="dynamic-entry" data-index="0">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Job Title</label>
-                  <input type="text" class="exp-title" placeholder="Software Engineer" />
-                </div>
-                <div class="form-group">
-                  <label>Company</label>
-                  <input type="text" class="exp-company" placeholder="Google" />
-                </div>
-                <div class="form-group">
-                  <label>Duration</label>
-                  <input type="text" class="exp-duration" placeholder="Jan 2022 - Present" />
-                </div>
-                <div class="form-group">
-                  <label>Location</label>
-                  <input type="text" class="exp-location" placeholder="Remote / City" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Responsibilities / Achievements</label>
-                <textarea class="exp-bullets" rows="4" placeholder="• Built REST APIs that reduced latency by 30%&#10;• Led a team of 4 engineers..."></textarea>
-              </div>
-            </div>
-          </div>
-          <button type="button" class="btn-add" onclick="addEntry('experience')">+ Add Experience</button>
-        </div>
-
-        <!-- Step 5: Projects -->
-        <div class="form-step" id="step-5">
-          <h2>Projects</h2>
-          <div id="projects-list">
-            <div class="dynamic-entry" data-index="0">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Project Name</label>
-                  <input type="text" class="proj-name" placeholder="AI Resume Builder" />
-                </div>
-                <div class="form-group">
-                  <label>Tech Stack</label>
-                  <input type="text" class="proj-tech" placeholder="Node.js, React, OpenAI" />
-                </div>
-                <div class="form-group">
-                  <label>Live URL (optional)</label>
-                  <input type="url" class="proj-url" placeholder="https://..." />
-                </div>
-                <div class="form-group">
-                  <label>GitHub URL (optional)</label>
-                  <input type="url" class="proj-github" placeholder="https://github.com/..." />
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Description</label>
-                <textarea class="proj-desc" rows="3" placeholder="Describe what the project does and your role..."></textarea>
-              </div>
-            </div>
-          </div>
-          <button type="button" class="btn-add" onclick="addEntry('projects')">+ Add Project</button>
-        </div>
-
-        <!-- Navigation Buttons -->
-        <div class="form-nav">
-          <button type="button" id="btn-back" class="btn-secondary" onclick="changeStep(-1)" style="display:none">← Back</button>
-          <button type="button" id="btn-next" class="btn-primary" onclick="changeStep(1)">Next →</button>
-          <button type="button" id="btn-submit" class="btn-primary" style="display:none" onclick="submitForm()">Build Resume ✨</button>
-        </div>
-
-      </form>
-    </div>
+    </div><!-- end app-layout -->
 
     <script src="app.js"></script>
   </body>
