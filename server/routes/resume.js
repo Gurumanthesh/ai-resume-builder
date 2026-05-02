@@ -1,8 +1,11 @@
-const express  = require("express");
-const router   = express.Router();
-const { generateSummary, improveContent } = require("../controllers/resumeController");
+const express            = require("express");
+const router             = express.Router();
+const resumeController   = require("../controllers/resumeController");
 
-// ── CSRF token validation on every mutating route ──
+const generateSummary    = resumeController.generateSummary;
+const improveContent     = resumeController.improveContent;
+
+// ── CSRF token validation middleware ──
 function csrfProtect(req, res, next) {
   const token = req.headers["x-csrf-token"];
   if (!token || token.length !== 64) {

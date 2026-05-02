@@ -1,21 +1,21 @@
-const openai = require("../utils/openai");
+const openai  = require("../utils/openai");
+const process = require("process");
 
 // ── Shared: call Ollama via OpenAI-compatible API ──
 async function chat(systemPrompt, userPrompt) {
   const response = await openai.chat.completions.create({
-    model: process.env.OLLAMA_MODEL || "llama3.1:8b",
-    messages: [
+    model:       process.env.OLLAMA_MODEL || "llama3.1:8b",
+    messages:    [
       { role: "system", content: systemPrompt },
       { role: "user",   content: userPrompt   }
     ],
     temperature: 0.7,
-    max_tokens: 400
+    max_tokens:  400
   });
   return response.choices[0].message.content.trim();
 }
 
 // ── POST /api/generate-summary ──
-// Body: { personal, experience, skills }
 async function generateSummary(req, res) {
   const { personal, experience, skills } = req.body;
 
@@ -23,16 +23,13 @@ async function generateSummary(req, res) {
     return res.status(400).json({ error: "fullName is required" });
   }
 
-  const userPrompt = `
-Name: ${personal.fullName}
-Skills: ${skills?.technical || "N/A"}
-Experience: ${(experience || [])
-    .map(e => `${e.title} at ${e.company} (${e.duration})`)
-    .join(", ") || "N/A"}
-
-Write a 3-sentence professional resume summary for this person.
-Be concise, use active voice, and highlight their strengths.
-`.trim();
+  const userPrompt = [
+    `Name: ${personal.fullName}`,
+    `Skills: ${skills?.technical || "N/A"}`,
+    `Experience: ${(experience || []).map(e => `${e.title} at ${e.company} (${e.duration})`).join(", ") || "N/A"}`,
+    "",
+    "Write a 3-sentence professional resume summary. Be concise, use active voice, highlight strengths."
+  ].join("\n");
 
   try {
     const summary = await chat(
@@ -42,12 +39,11 @@ Be concise, use active voice, and highlight their strengths.
     res.json({ summary });
   } catch (err) {
     console.error("generate-summary error:", err.message);
-    res.status(500).json({ error: "Failed to generate summary. Check your OpenAI API key." });
+    res.status(500).json({ error: "Failed to generate summary." });
   }
 }
 
 // ── POST /api/improve-content ──
-// Body: { type: "bullets"|"description", content: string }
 async function improveContent(req, res) {
   const { type, content } = req.body;
 
@@ -55,7 +51,7 @@ async function improveContent(req, res) {
     return res.status(400).json({ error: "content is required" });
   }
 
-  const prompts = {
+  const PROMPTS = {
     bullets: {
       system: "You are an expert resume writer. Improve bullet points to be impactful, quantified, and ATS-friendly.",
       user:   `Improve these resume bullet points. Return only the improved bullets, one per line starting with •:\n\n${content}`
@@ -66,14 +62,14 @@ async function improveContent(req, res) {
     }
   };
 
-  const prompt = prompts[type] || prompts.bullets;
+  const prompt = PROMPTS[type] || PROMPTS.bullets;
 
   try {
     const improved = await chat(prompt.system, prompt.user);
     res.json({ improved });
   } catch (err) {
     console.error("improve-content error:", err.message);
-    res.status(500).json({ error: "Failed to improve content. Check your OpenAI API key." });
+    res.status(500).json({ error: "Failed to improve content." });
   }
 }
 
