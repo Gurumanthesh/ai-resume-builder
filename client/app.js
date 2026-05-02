@@ -53,9 +53,11 @@ function debounce(fn, delay) {
 // ─────────────────────────────────────────────
 async function initCSRF() {
   try {
-    const res  = await fetch(API_BASE + '/csrf-token');
-    const data = await res.json();
-    csrfToken  = data.token;
+    // Use window.location.origin to ensure request stays on same origin
+    const origin = window.location.origin;
+    const res    = await fetch(origin + API_BASE + '/csrf-token');
+    const data   = await res.json();
+    csrfToken    = data.token;
   } catch (e) {
     console.warn('CSRF token fetch failed:', e);
   }
