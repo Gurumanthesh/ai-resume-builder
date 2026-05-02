@@ -72,55 +72,110 @@ function changeStep(direction) {
 }
 
 // ─────────────────────────────────────────────
-// Dynamic Entry Templates
+// Dynamic Entry Builder (DOM API — no innerHTML)
 // ─────────────────────────────────────────────
-const ENTRY_TEMPLATES = {
-  education: (i) => `
-    <div class="dynamic-entry" data-index="${i}">
-      <button type="button" class="btn-remove" onclick="removeEntry(this)">✕</button>
-      <div class="form-grid">
-        <div class="form-group"><label>Degree</label><input type="text" class="edu-degree" placeholder="B.Sc. Computer Science" /></div>
-        <div class="form-group"><label>Institution</label><input type="text" class="edu-institution" placeholder="MIT" /></div>
-        <div class="form-group"><label>Year</label><input type="text" class="edu-year" placeholder="2020 – 2024" /></div>
-        <div class="form-group"><label>GPA (optional)</label><input type="text" class="edu-gpa" placeholder="3.8 / 4.0" /></div>
-      </div>
-    </div>`,
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'class') node.className = v;
+    else if (k === 'text') node.textContent = v;
+    else node.setAttribute(k, v);
+  });
+  children.forEach(c => c && node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+  return node;
+}
 
-  experience: (i) => `
-    <div class="dynamic-entry" data-index="${i}">
-      <button type="button" class="btn-remove" onclick="removeEntry(this)">✕</button>
-      <div class="form-grid">
-        <div class="form-group"><label>Job Title</label><input type="text" class="exp-title" placeholder="Software Engineer" /></div>
-        <div class="form-group"><label>Company</label><input type="text" class="exp-company" placeholder="Google" /></div>
-        <div class="form-group"><label>Duration</label><input type="text" class="exp-duration" placeholder="Jan 2022 – Present" /></div>
-        <div class="form-group"><label>Location</label><input type="text" class="exp-location" placeholder="Remote / City" /></div>
-      </div>
-      <div class="form-group"><label>Responsibilities / Achievements</label>
-        <textarea class="exp-bullets" rows="4" placeholder="• Built REST APIs that reduced latency by 30%&#10;• Led a team of 4 engineers..."></textarea>
-        <button type="button" class="btn-ai" onclick="improveBullets(this)">✨ Improve Bullets</button>
-      </div>
-    </div>`,
+function makeFormGroup(labelText, inputAttrs) {
+  const group = el('div', { class: 'form-group' });
+  group.appendChild(el('label', { text: labelText }));
+  const tag    = inputAttrs.rows ? 'textarea' : 'input';
+  const input  = el(tag, inputAttrs);
+  group.appendChild(input);
+  return { group, input };
+}
 
-  projects: (i) => `
-    <div class="dynamic-entry" data-index="${i}">
-      <button type="button" class="btn-remove" onclick="removeEntry(this)">✕</button>
-      <div class="form-grid">
-        <div class="form-group"><label>Project Name</label><input type="text" class="proj-name" placeholder="AI Resume Builder" /></div>
-        <div class="form-group"><label>Tech Stack</label><input type="text" class="proj-tech" placeholder="Node.js, React, OpenAI" /></div>
-        <div class="form-group"><label>Live URL (optional)</label><input type="url" class="proj-url" placeholder="https://..." /></div>
-        <div class="form-group"><label>GitHub URL (optional)</label><input type="url" class="proj-github" placeholder="https://github.com/..." /></div>
-      </div>
-      <div class="form-group"><label>Description</label>
-        <textarea class="proj-desc" rows="3" placeholder="Describe what the project does and your role..."></textarea>
-        <button type="button" class="btn-ai" onclick="improveDescription(this)">✨ Improve Description</button>
-      </div>
-    </div>`
+function makeAIButton(text, handler) {
+  const btn = el('button', { type: 'button', class: 'btn-ai' , text });
+  btn.addEventListener('click', () => handler(btn));
+  return btn;
+}
+
+function makeRemoveButton(entry) {
+  const btn = el('button', { type: 'button', class: 'btn-remove', text: '✕' });
+  btn.addEventListener('click', () => { entry.remove(); renderPreview(); });
+  return btn;
+}
+
+function buildEducationEntry(i) {
+  const entry = el('div', { class: 'dynamic-entry', 'data-index': i });
+  const grid  = el('div', { class: 'form-grid' });
+  entry.appendChild(makeRemoveButton(entry));
+  [['Degree','edu-degree','B.Sc. Computer Science'],
+   ['Institution','edu-institution','MIT'],
+   ['Year','edu-year','2020 – 2024'],
+   ['GPA (optional)','edu-gpa','3.8 / 4.0']
+  ].forEach(([label, cls, ph]) => {
+    const { group } = makeFormGroup(label, { type:'text', class: cls, placeholder: ph });
+    grid.appendChild(group);
+  });
+  entry.appendChild(grid);
+  return entry;
+}
+
+function buildExperienceEntry(i) {
+  const entry = el('div', { class: 'dynamic-entry', 'data-index': i });
+  const grid  = el('div', { class: 'form-grid' });
+  entry.appendChild(makeRemoveButton(entry));
+  [['Job Title','exp-title','Software Engineer'],
+   ['Company','exp-company','Google'],
+   ['Duration','exp-duration','Jan 2022 – Present'],
+   ['Location','exp-location','Remote / City']
+  ].forEach(([label, cls, ph]) => {
+    const { group } = makeFormGroup(label, { type:'text', class: cls, placeholder: ph });
+    grid.appendChild(group);
+  });
+  entry.appendChild(grid);
+  const { group: bGroup, input: bInput } = makeFormGroup(
+    'Responsibilities / Achievements',
+    { class: 'exp-bullets', rows: '4', placeholder: '• Built REST APIs that reduced latency by 30%\n• Led a team of 4 engineers...' }
+  );
+  bGroup.appendChild(makeAIButton('✨ Improve Bullets', improveBullets));
+  entry.appendChild(bGroup);
+  return entry;
+}
+
+function buildProjectEntry(i) {
+  const entry = el('div', { class: 'dynamic-entry', 'data-index': i });
+  const grid  = el('div', { class: 'form-grid' });
+  entry.appendChild(makeRemoveButton(entry));
+  [['Project Name','proj-name','AI Resume Builder'],
+   ['Tech Stack','proj-tech','Node.js, React, OpenAI'],
+   ['Live URL (optional)','proj-url','https://...'],
+   ['GitHub URL (optional)','proj-github','https://github.com/...']
+  ].forEach(([label, cls, ph]) => {
+    const type = cls.includes('url') ? 'url' : 'text';
+    const { group } = makeFormGroup(label, { type, class: cls, placeholder: ph });
+    grid.appendChild(group);
+  });
+  entry.appendChild(grid);
+  const { group: dGroup } = makeFormGroup(
+    'Description',
+    { class: 'proj-desc', rows: '3', placeholder: 'Describe what the project does and your role...' }
+  );
+  dGroup.appendChild(makeAIButton('✨ Improve Description', improveDescription));
+  entry.appendChild(dGroup);
+  return entry;
+}
+
+const ENTRY_BUILDERS = {
+  education:  buildEducationEntry,
+  experience: buildExperienceEntry,
+  projects:   buildProjectEntry
 };
 
 function addEntry(type) {
-  const listId = `${type === 'education' ? 'education' : type === 'experience' ? 'experience' : 'projects'}-list`;
-  const list   = document.getElementById(listId);
-  list.insertAdjacentHTML('beforeend', ENTRY_TEMPLATES[type](list.children.length));
+  const list = document.getElementById(`${type}-list`);
+  list.appendChild(ENTRY_BUILDERS[type](list.children.length));
 }
 
 function removeEntry(btn) {
@@ -434,13 +489,25 @@ async function initCSRF() {
 }
 
 // Only allow relative API paths to prevent SSRF
-const ALLOWED_ENDPOINTS = ['generate-summary', 'improve-content'];
+const ALLOWED_ENDPOINTS = Object.freeze(['generate-summary', 'improve-content']);
+const API_BASE          = '/api'; // never interpolated from user input
+
+async function initCSRF() {
+  try {
+    const res  = await fetch(API_BASE + '/csrf-token');
+    const data = await res.json();
+    csrfToken  = data.token;
+  } catch (e) {
+    console.warn('CSRF token fetch failed:', e);
+  }
+}
 
 async function callAPI(endpoint, body) {
   if (!ALLOWED_ENDPOINTS.includes(endpoint)) {
     throw new Error('Invalid API endpoint');
   }
-  const res = await fetch(`/api/${endpoint}`, {
+  const url = API_BASE + '/' + endpoint; // always relative, never user-controlled
+  const res = await fetch(url, {
     method:  'POST',
     headers: {
       'Content-Type': 'application/json',

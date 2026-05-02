@@ -1,37 +1,27 @@
 require("dotenv").config();
 const express = require("express");
 const cors    = require("cors");
-const path    = require("path");
 const crypto  = require("crypto");
+const path    = require("path");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Restrict CORS to trusted origin only ──
+// ── Restrict CORS to trusted origin ──
 const ALLOWED_ORIGIN = process.env.CLIENT_ORIGIN || `http://localhost:${PORT}`;
 app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
 
 // ── Body parser with payload guard ──
 app.use(express.json({ limit: "10kb" }));
 
-// ── CSRF token endpoint ──
-// Client fetches this token and sends it back as X-CSRF-Token header
+// ── CSRF token endpoint (GET — no mutation, no CSRF needed) ──
 app.get("/api/csrf-token", (req, res) => {
   const token = crypto.randomBytes(32).toString("hex");
   res.json({ token });
 });
 
-// ── CSRF validation middleware for mutating routes ──
-function csrfProtect(req, res, next) {
-  const token = req.headers["x-csrf-token"];
-  if (!token || token.length !== 64) {
-    return res.status(403).json({ error: "Invalid CSRF token" });
-  }
-  next();
-}
-
-// ── API Routes ──
-app.use("/api", csrfProtect, require("./routes/resume"));
+// ── API Routes (CSRF protection is applied inside the router) ──
+app.use("/api", require("./routes/resume"));
 
 // ── Serve Static Frontend ──
 app.use(express.static(path.join(__dirname, "../client")));
