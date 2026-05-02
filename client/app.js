@@ -514,7 +514,7 @@ async function generateSummary() {
 // AI: Improve Bullets
 // ─────────────────────────────────────────────
 async function improveBullets(btn) {
-  const textarea = btn.previousElementSibling;
+  const textarea = btn.closest('.form-group').querySelector('.exp-bullets');
   if (!textarea?.value.trim()) {
     showToast('Please enter some bullet points first', 'error');
     return;
@@ -536,7 +536,7 @@ async function improveBullets(btn) {
 // AI: Improve Description
 // ─────────────────────────────────────────────
 async function improveDescription(btn) {
-  const textarea = btn.previousElementSibling;
+  const textarea = btn.closest('.form-group').querySelector('.proj-desc');
   if (!textarea?.value.trim()) {
     showToast('Please enter a description first', 'error');
     return;
@@ -631,6 +631,40 @@ async function downloadPDF() {
 }
 
 // ─────────────────────────────────────────────
+// Auto-save Indicator
+// ─────────────────────────────────────────────
+let saveTimer = null;
+function showSaveIndicator() {
+  const el = document.getElementById('save-indicator');
+  if (!el) return;
+  el.textContent = '✔ Saved';
+  el.classList.add('visible');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => el.classList.remove('visible'), 2000);
+}
+
+// ─────────────────────────────────────────────
+// Clear Form
+// ─────────────────────────────────────────────
+function clearForm() {
+  if (!confirm('Clear all form data? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('resume-form').reset();
+  // Reset dynamic lists to single empty entry
+  ['education', 'experience', 'projects'].forEach(type => {
+    const list = document.getElementById(`${type}-list`);
+    list.innerHTML = '';
+    list.appendChild(ENTRY_BUILDERS[type](0));
+  });
+  document.getElementById('aiSummary').value = '';
+  currentStep = 1;
+  changeStep(0);
+  updateProgress();
+  renderPreview();
+  showToast('Form cleared');
+}
+
+// ─────────────────────────────────────────────
 // Submit
 // ─────────────────────────────────────────────
 function submitForm() {
@@ -641,8 +675,15 @@ function submitForm() {
 // ─────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────
-document.getElementById('resume-form').addEventListener('input', debouncedRender);
+const debouncedSaveAndRender = debounce(() => {
+  saveToLocalStorage();
+  showSaveIndicator();
+  updateProgress();
+  renderPreview();
+}, 150);
+
+document.getElementById('resume-form').addEventListener('input', debouncedSaveAndRender);
 loadTheme();
+loadFromLocalStorage(); // load data first
 initCSRF();
-loadFromLocalStorage();
-loadTemplate();
+loadTemplate();         // then render with correct template

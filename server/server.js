@@ -19,7 +19,7 @@ app.use(cookieParser());
 // ── CSRF protection via csrf-csrf (double-submit cookie pattern) ──
 const { generateToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:     () => process.env.CSRF_SECRET || "default-csrf-secret-change-in-prod",
-  cookieName:    "__Host-psifi.x-csrf-token",
+  cookieName:    "x-csrf-token",  // removed __Host- prefix — requires HTTPS, breaks on localhost
   cookieOptions: { sameSite: "strict", secure: process.env.NODE_ENV === "production", httpOnly: true },
   size:          64,
   getTokenFromRequest: (req) => req.headers["x-csrf-token"]
