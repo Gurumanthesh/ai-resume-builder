@@ -197,7 +197,10 @@
       <div class="preview-panel">
         <div class="preview-header">
           <span>📄 Live Preview</span>
-          <span class="preview-badge">ATS Friendly</span>
+          <div class="preview-header-actions">
+            <span class="preview-badge">ATS Friendly</span>
+            <button class="btn-download" id="btn-download" onclick="downloadPDF()">⬇ Download PDF</button>
+          </div>
         </div>
         <div class="resume-preview" id="resume-preview">
           <!-- Rendered by app.js -->
@@ -209,6 +212,7 @@
 
     </div><!-- end app-layout -->
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

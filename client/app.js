@@ -501,11 +501,48 @@ async function improveDescription(btn) {
 }
 
 // ─────────────────────────────────────────────
+// PDF Export
+// ─────────────────────────────────────────────
+async function downloadPDF() {
+  const doc = document.getElementById('resume-doc');
+  if (!doc) {
+    showToast('Please fill in your resume first', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-download');
+  btn.disabled     = true;
+  btn.textContent  = '⏳ Generating...';
+
+  const name     = document.getElementById('fullName')?.value.trim() || 'resume';
+  const filename = `${name.replace(/\s+/g, '_')}_resume.pdf`;
+
+  const options = {
+    margin:      [10, 10, 10, 10],
+    filename,
+    image:       { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    await html2pdf().set(options).from(doc).save();
+    showToast('PDF downloaded! ✅');
+  } catch (err) {
+    showToast('PDF generation failed', 'error');
+    console.error('PDF error:', err);
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '⬇ Download PDF';
+  }
+}
+
+// ─────────────────────────────────────────────
 // Submit
 // ─────────────────────────────────────────────
 function submitForm() {
   saveToLocalStorage();
-  showToast('Resume saved! PDF export coming in Phase 6 ✅');
+  showToast('Resume saved! Click ⬇ Download PDF to export ✅');
 }
 
 // ─────────────────────────────────────────────

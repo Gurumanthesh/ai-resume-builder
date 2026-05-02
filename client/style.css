@@ -399,6 +399,12 @@ body {
   z-index: 10;
 }
 
+.preview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .preview-badge {
   background: #dcfce7;
   color: #15803d;
@@ -409,6 +415,24 @@ body {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+
+.btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 16px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 2px 8px rgba(108,99,255,0.25);
+}
+.btn-download:hover    { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 14px rgba(108,99,255,0.35); }
+.btn-download:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .resume-preview {
   padding: 24px;
