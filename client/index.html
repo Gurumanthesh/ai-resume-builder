@@ -12,8 +12,20 @@
   <body>
     <!-- Header -->
     <header class="main-header">
-      <h1>🧠 AI Resume Builder</h1>
-      <p>Build a professional resume in minutes</p>
+      <div class="header-left">
+        <h1>🧠 AI Resume Builder</h1>
+        <p>Build a professional resume in minutes</p>
+      </div>
+      <div class="header-controls">
+        <!-- Template Switcher -->
+        <div class="template-switcher">
+          <span class="template-label">Template:</span>
+          <button class="btn-template active" data-template="classic" onclick="switchTemplate('classic')">Classic</button>
+          <button class="btn-template" data-template="modern" onclick="switchTemplate('modern')">Modern</button>
+        </div>
+        <!-- Dark Mode Toggle -->
+        <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+      </div>
     </header>
 
     <div class="app-layout">

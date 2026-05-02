@@ -401,18 +401,27 @@ function renderPreview() {
         ${renderBullets(pr.desc)}
       </div>`).join('');
 
-  const summaryText = document.getElementById('aiSummary')?.value.trim();
+  const summaryText   = document.getElementById('aiSummary')?.value.trim();
+  const isModern      = currentTemplate === 'modern';
+  const templateClass = isModern ? 'template-modern' : 'template-classic';
 
-  container.innerHTML = `
-    <div class="resume-doc" id="resume-doc">
+  const innerContent = `
+    ${isModern ? `
+      <div class="rv-header-block">
+        <div class="rv-name">${sanitize(p.fullName)}</div>
+        <div class="rv-contact">${contactParts}</div>
+      </div>
+      <div class="rv-body">` : `
       <div class="rv-name">${sanitize(p.fullName)}</div>
-      <div class="rv-contact">${contactParts}</div>
+      <div class="rv-contact">${contactParts}</div>`}
       ${summaryText ? `<div class="rv-section"><div class="rv-section-title">Summary</div><p class="rv-summary">${sanitize(summaryText)}</p></div>` : ''}
       ${eduHTML    ? `<div class="rv-section"><div class="rv-section-title">Education</div>${eduHTML}</div>`                                    : ''}
       ${skillsHTML ? `<div class="rv-section"><div class="rv-section-title">Skills</div><div class="rv-skills-grid">${skillsHTML}</div></div>`  : ''}
       ${expHTML    ? `<div class="rv-section"><div class="rv-section-title">Experience</div>${expHTML}</div>`                                   : ''}
       ${projHTML   ? `<div class="rv-section"><div class="rv-section-title">Projects</div>${projHTML}</div>`                                    : ''}
-    </div>`;
+    ${isModern ? '</div>' : ''}`;
+
+  container.innerHTML = `<div class="resume-doc ${templateClass}" id="resume-doc">${innerContent}</div>`;
 }
 
 const debouncedRender = debounce(() => {
@@ -503,6 +512,45 @@ async function improveDescription(btn) {
 }
 
 // ─────────────────────────────────────────────
+// Dark Mode
+// ─────────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const theme  = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('btn-theme').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('theme', theme);
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+  const btn = document.getElementById('btn-theme');
+  if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+}
+
+// ─────────────────────────────────────────────
+// Template Switching
+// ─────────────────────────────────────────────
+let currentTemplate = 'classic';
+
+function switchTemplate(template) {
+  currentTemplate = template;
+  localStorage.setItem('template', template);
+
+  document.querySelectorAll('.btn-template').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.template === template);
+  });
+
+  renderPreview();
+}
+
+function loadTemplate() {
+  const saved = localStorage.getItem('template') || 'classic';
+  switchTemplate(saved);
+}
+
+// ─────────────────────────────────────────────
 // PDF Export
 // ─────────────────────────────────────────────
 async function downloadPDF() {
@@ -551,6 +599,7 @@ function submitForm() {
 // Init
 // ─────────────────────────────────────────────
 document.getElementById('resume-form').addEventListener('input', debouncedRender);
+loadTheme();
 initCSRF();
 loadFromLocalStorage();
-renderPreview();
+loadTemplate();
