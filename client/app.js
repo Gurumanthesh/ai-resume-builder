@@ -82,9 +82,50 @@ async function callAPI(endpoint, body) {
 }
 
 // ─────────────────────────────────────────────
+// Form Validation
+// ─────────────────────────────────────────────
+function validateStep(step) {
+  if (step === 1) {
+    const name  = document.getElementById('fullName')?.value.trim();
+    const email = document.getElementById('email')?.value.trim();
+    if (!name)  { showToast('Please enter your full name', 'error');  return false; }
+    if (!email) { showToast('Please enter your email', 'error');       return false; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showToast('Please enter a valid email address', 'error');
+      return false;
+    }
+  }
+  return true;
+}
+
+// ─────────────────────────────────────────────
+// Progress Bar
+// ─────────────────────────────────────────────
+function updateProgress() {
+  const data    = collectFormData();
+  const checks  = [
+    data.personal.fullName,
+    data.personal.email,
+    data.personal.phone,
+    data.education.some(e => e.degree),
+    data.skills.technical,
+    data.experience.some(e => e.title),
+    data.projects.some(p => p.name),
+    document.getElementById('aiSummary')?.value.trim()
+  ];
+  const pct  = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  const bar  = document.getElementById('progress-bar');
+  const label = document.getElementById('progress-label');
+  if (bar)   bar.style.width   = pct + '%';
+  if (label) label.textContent = pct + '% Complete';
+}
+
+// ─────────────────────────────────────────────
 // Step Navigation
 // ─────────────────────────────────────────────
 function changeStep(direction) {
+  if (direction > 0 && !validateStep(currentStep)) return;
+
   saveToLocalStorage();
 
   const prev = currentStep;
@@ -103,6 +144,7 @@ function changeStep(direction) {
   document.getElementById('btn-next').style.display   = currentStep < TOTAL_STEPS  ? 'inline-flex' : 'none';
   document.getElementById('btn-submit').style.display = currentStep === TOTAL_STEPS ? 'inline-flex' : 'none';
 
+  updateProgress();
   renderPreview();
 }
 
@@ -426,6 +468,7 @@ function renderPreview() {
 
 const debouncedRender = debounce(() => {
   saveToLocalStorage();
+  updateProgress();
   renderPreview();
 }, 150);
 
