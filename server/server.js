@@ -1,6 +1,7 @@
 require("dotenv").config();
 const express        = require("express");
 const cors           = require("cors");
+const compression    = require("compression");
 const cookieParser   = require("cookie-parser");
 const { doubleCsrf } = require("csrf-csrf");
 const rateLimit      = require("express-rate-limit");
@@ -14,6 +15,12 @@ const PORT = process.env.PORT || 3000;
 if (process.env.TRUST_PROXY) {
   app.set('trust proxy', parseInt(process.env.TRUST_PROXY, 10) || 1);
 }
+
+// ── Compression ──
+app.use(compression());
+
+// ── Health endpoint — used by Railway/Render/load balancers ──
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ── Security headers ──
 app.use((req, res, next) => {
@@ -91,11 +98,7 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/index.html"));
 });
 
-app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
-});
-
-// ── Global Error Handler (must be after listen) ──
+// ── Global Error Handler (must be before listen) ──
 app.use((err, req, res, next) => {
   if (err.code === 'EBADCSRFTOKEN' || err.status === 403) {
     return res.status(403).json({ error: 'Invalid CSRF token' });
@@ -103,3 +106,21 @@ app.use((err, req, res, next) => {
   console.error('Unhandled error:', err.message);
   res.status(500).json({ error: 'Internal server error' });
 });
+
+// ── Start server ──
+const server = app.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
+});
+
+// ── Graceful shutdown — required for Railway/Render zero-downtime deploys ──
+function shutdown(signal) {
+  console.log(`${signal} received — shutting down gracefully`);
+  server.close(() => {
+    console.log('HTTP server closed');
+    process.exit(0);
+  });
+  // Force exit if server hasn't closed within 10s
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT',  () => shutdown('SIGINT'));

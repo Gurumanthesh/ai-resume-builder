@@ -5,10 +5,11 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev":   "nodemon server/server.js",
-    "test":  "node server/tests/security.test.js"
+    "dev": "nodemon server/server.js",
+    "test": "node server/tests/security.test.js"
   },
   "dependencies": {
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "csrf-csrf": "^4.0.3",
