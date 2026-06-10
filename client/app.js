@@ -19,6 +19,17 @@ function sanitize(str) {
   return div.innerHTML;
 }
 
+// Validate URLs — only allow http/https to block javascript: and data: hrefs
+function safeUrl(str) {
+  if (!str) return '';
+  try {
+    const url = new URL(str);
+    return (url.protocol === 'https:' || url.protocol === 'http:') ? str : '';
+  } catch {
+    return '';
+  }
+}
+
 // ─────────────────────────────────────────────
 // Toast Notification
 // ─────────────────────────────────────────────
@@ -400,11 +411,11 @@ function renderPreview(data) {
   }
 
   const contactParts = [
-    p.email    ? `<a href="mailto:${sanitize(p.email)}">${sanitize(p.email)}</a>`                          : '',
-    p.phone    ? `<span>${sanitize(p.phone)}</span>`                                                        : '',
-    p.location ? `<span>${sanitize(p.location)}</span>`                                                     : '',
-    p.linkedin ? `<a href="${sanitize(p.linkedin)}" target="_blank" rel="noopener">LinkedIn</a>`            : '',
-    p.github   ? `<a href="${sanitize(p.github)}"   target="_blank" rel="noopener">GitHub</a>`             : ''
+    p.email    ? `<a href="mailto:${sanitize(p.email)}">${sanitize(p.email)}</a>`                                          : '',
+    p.phone    ? `<span>${sanitize(p.phone)}</span>`                                                                        : '',
+    p.location ? `<span>${sanitize(p.location)}</span>`                                                                     : '',
+    p.linkedin && safeUrl(p.linkedin) ? `<a href="${safeUrl(p.linkedin)}" target="_blank" rel="noopener noreferrer">LinkedIn</a>` : '',
+    p.github   && safeUrl(p.github)   ? `<a href="${safeUrl(p.github)}"   target="_blank" rel="noopener noreferrer">GitHub</a>`   : ''
   ].filter(Boolean).join('<span class="rv-sep"> · </span>');
 
   const eduHTML = data.education
@@ -446,8 +457,8 @@ function renderPreview(data) {
         </div>
         ${pr.url || pr.github ? `
           <div class="rv-subtitle">
-            ${pr.url    ? `<a href="${sanitize(pr.url)}"    target="_blank" rel="noopener">Live</a>`   : ''}
-            ${pr.github ? `<a href="${sanitize(pr.github)}" target="_blank" rel="noopener">GitHub</a>` : ''}
+            ${pr.url    && safeUrl(pr.url)    ? `<a href="${safeUrl(pr.url)}"    target="_blank" rel="noopener noreferrer">Live</a>`   : ''}
+            ${pr.github && safeUrl(pr.github) ? `<a href="${safeUrl(pr.github)}" target="_blank" rel="noopener noreferrer">GitHub</a>` : ''}
           </div>` : ''}
         ${renderBullets(pr.desc)}
       </div>`).join('');

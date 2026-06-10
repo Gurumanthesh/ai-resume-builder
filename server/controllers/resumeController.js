@@ -27,7 +27,12 @@ function cleanOutput(text) {
     .trim();
 }
 
-// Shared: call Ollama via OpenAI-compatible API
+// Strip newlines/control chars from user strings before prompt interpolation
+// Prevents prompt injection via multi-line form field values
+function sanitizeForPrompt(str) {
+  return String(str || '').replace(/[\r\n\t]/g, ' ').trim().slice(0, 200);
+}
+
 async function chat(systemPrompt, userPrompt, { temperature = 0.4, max_tokens = 400 } = {}) {
   const response = await openai.chat.completions.create({
     model:    process.env.OLLAMA_MODEL || 'llama3.1:8b',
@@ -49,11 +54,12 @@ async function generateSummary(req, res) {
     return res.status(400).json({ error: 'fullName is required' });
   }
 
-  const topSkills   = (skills?.technical || '').split(',').slice(0, 8).join(', ').trim() || 'N/A';
-  const expLines    = (experience || [])
+  const topSkills = (skills?.technical || '').split(',').slice(0, 8)
+    .map(s => sanitizeForPrompt(s)).join(', ') || 'N/A';
+  const expLines  = (experience || [])
     .filter(e => e.title || e.company)
     .slice(0, 4)
-    .map(e => `- ${e.title || 'Role'} at ${e.company || 'Company'} (${e.duration || 'N/A'})`)
+    .map(e => `- ${sanitizeForPrompt(e.title || 'Role')} at ${sanitizeForPrompt(e.company || 'Company')} (${sanitizeForPrompt(e.duration || 'N/A')})`)
     .join('\n') || '- No experience listed';
 
   const systemPrompt =
@@ -105,6 +111,10 @@ async function generateSummary(req, res) {
 async function improveContent(req, res) {
   const { type, content } = req.body;
 
+  const ALLOWED_TYPES = ['bullets', 'description'];
+  if (!ALLOWED_TYPES.includes(type)) {
+    return res.status(400).json({ error: `type must be one of: ${ALLOWED_TYPES.join(', ')}` });
+  }
   if (!content?.trim()) {
     return res.status(400).json({ error: 'content is required' });
   }
