@@ -1,13 +1,29 @@
 const openai = require('../utils/openai');
 
-// Max input length — prevents prompt injection via oversized payloads
-const MAX_CONTENT_LENGTH = 2000;
+// Prompt version — increment when prompts change; logged with every request for traceability
+const PROMPT_VERSION = 'v4';
 
-// Strip common AI preamble/filler that leaks into output
+// Per-type input length caps
+const MAX_LENGTH = {
+  bullets:     1500,
+  description:  800,
+  summary:     2000   // personal + skills + experience combined
+};
+
+// Count sentences robustly — a sentence boundary is [.!?] where:
+//   - for '.' : preceded by 2+ word chars (rules out A. B. C. single-letter abbrevs)
+//   - followed by whitespace+uppercase or end-of-string
+function countSentences(text) {
+  const boundaries = text.match(/(?<=\w{2,})[.!?](?=\s+[A-Z]|\s*$)|[!?](?=\s+[A-Z]|\s*$)/g);
+  return boundaries ? boundaries.length : (text.trim().length > 0 ? 1 : 0);
+}
+
+// Strip AI preamble/filler from the START of output only — no global replacements
 function cleanOutput(text) {
   return text
-    .replace(/^(sure[!,.]?|here (are|is|you go)[^\n]*|absolutely[!,.]?|of course[!,.]?)[\s\n]*/i, '')
-    .replace(/^(improved (version|bullets|description|summary)[:\s]*)/i, '')
+    .replace(/^(sure[!,.]?|here (are|is|you go)[^\n]*|absolutely[!,.]?|of course[!,.]?)\s*/i, '')
+    .replace(/^(improved (version|bullets|description|summary)\s*[:\-]?\s*)/i, '')
+    .replace(/^(here's the (improved|rewritten|updated)[^\n]*)\s*/i, '')
     .trim();
 }
 
@@ -42,7 +58,7 @@ async function generateSummary(req, res) {
 
   const systemPrompt =
     'You are a professional resume writer specializing in ATS-optimized resumes. ' +
-    'Output ONLY the summary text — no labels, no preamble, no explanation.';
+    'Output ONLY plain text — no markdown, no headings, no bullet points, no explanations.';
 
   const userPrompt = [
     `Candidate: ${personal.fullName}`,
@@ -52,18 +68,35 @@ async function generateSummary(req, res) {
     'Write a 3-sentence ATS-optimized professional summary.',
     'Rules:',
     '- Start with a strong professional title or identity statement',
-    '- Embed the most relevant skills from the Key Skills list naturally',
+    '- Weave in relevant skills from the Key Skills list naturally — do not list them verbatim or force keywords',
     '- Use active voice and strong action-oriented language',
     '- End with a value proposition or career goal',
     '- Do NOT use first person (no I, me, my)',
-    '- Output the 3 sentences only, no bullet points, no headers'
+    '- Do NOT invent employers, projects, certifications, awards, or achievements not present in the input',
+    '- Output exactly 3 sentences of plain text — no bullet points, no headers, no markdown'
   ].join('\n');
 
   try {
-    const summary = await chat(systemPrompt, userPrompt, { temperature: 0.4, max_tokens: 180 });
+    const raw       = await chat(systemPrompt, userPrompt, { temperature: 0.4, max_tokens: 180 });
+    const sentCount = countSentences(raw);
+    const retried   = sentCount > 4;
+
+    // Output-length guard: retry once if model ignores the 3-sentence limit
+    // Log both attempts so retry frequency can be monitored (point 2)
+    let summary = raw;
+    if (retried) {
+      console.warn(`[${PROMPT_VERSION}] generate-summary: overlong output (${sentCount} sentences), retrying`);
+      summary = await chat(
+        systemPrompt,
+        userPrompt + '\n\nCRITICAL: Output exactly 3 sentences. Stop after the third sentence.',
+        { temperature: 0.2, max_tokens: 180 }
+      );
+    }
+
+    console.info(`[${PROMPT_VERSION}] generate-summary ok | retried=${retried} | sentences=${sentCount}`);
     res.json({ summary });
   } catch (err) {
-    console.error('generate-summary error:', err.message);
+    console.error(`[${PROMPT_VERSION}] generate-summary error:`, err.message);
     res.status(500).json({ error: 'Failed to generate summary.' });
   }
 }
@@ -75,55 +108,64 @@ async function improveContent(req, res) {
   if (!content?.trim()) {
     return res.status(400).json({ error: 'content is required' });
   }
-  if (content.length > MAX_CONTENT_LENGTH) {
-    return res.status(400).json({ error: `content exceeds ${MAX_CONTENT_LENGTH} character limit` });
+  const maxLen = MAX_LENGTH[type] || MAX_LENGTH.bullets;
+  if (content.length > maxLen) {
+    return res.status(400).json({ error: `content exceeds ${maxLen} character limit for type '${type}'` });
   }
 
   const PROMPTS = {
     bullets: {
       system:
-        'You are a professional resume writer. Output ONLY the improved bullet points — ' +
-        'no preamble, no explanation, no labels.',
+        'You are a professional resume writer. ' +
+        'Output ONLY plain text bullet points — no markdown, no numbering, no explanations, no preamble.',
       user: [
         'Rewrite these resume bullet points to be ATS-friendly and achievement-focused.',
         'Rules:',
         '- Start each bullet with a strong past-tense action verb (e.g. Engineered, Reduced, Led, Delivered)',
-        '- Include metrics or quantifiable outcomes wherever possible (%, $, time, scale)',
-        '- Remove filler words (responsible for, helped with, assisted in)',
+        '- Use measurable metrics only if they are present in the original content — do NOT invent numbers, percentages, or outcomes',
+        '- Do NOT create technologies, responsibilities, or achievements not present in the original',
+        '- Remove filler phrases (responsible for, helped with, assisted in, worked on)',
         '- Keep each bullet under 20 words',
         '- Return one bullet per line, each starting with •',
-        '- Return ONLY the bullets, nothing else',
+        '- Return plain text ONLY — no markdown, no headings, no explanations',
         '',
         `Original bullets:\n${content}`
       ].join('\n'),
-      max_tokens: 400
+      temperature: 0.3,
+      max_tokens:  400
     },
     description: {
       system:
-        'You are a professional resume writer. Output ONLY the improved project description — ' +
-        'no preamble, no explanation, no labels.',
+        'You are a professional resume writer. ' +
+        'Output ONLY plain text — no markdown, no headings, no bullet points, no explanations, no preamble.',
       user: [
         'Rewrite this project description for a resume to be concise, impactful, and ATS-friendly.',
         'Rules:',
         '- Start with a strong action verb in past tense',
-        '- Mention the core technology or tools used',
-        '- State the outcome or impact clearly',
-        '- Keep it to 2–3 sentences maximum',
+        '- Mention only the technologies or tools that appear in the original content',
+        '- State the outcome or impact only if it is present in the original — do NOT invent metrics or results',
+        '- Do NOT create features, technologies, or achievements not mentioned in the original',
+        '- Keep it to 2–3 sentences of plain text — no bullet points, no markdown',
         '- Return ONLY the improved description, nothing else',
         '',
         `Original description:\n${content}`
       ].join('\n'),
-      max_tokens: 150
+      temperature: 0.4,
+      max_tokens:  150
     }
   };
 
   const prompt = PROMPTS[type] || PROMPTS.bullets;
 
   try {
-    const improved = await chat(prompt.system, prompt.user, { temperature: 0.4, max_tokens: prompt.max_tokens });
+    const improved = await chat(prompt.system, prompt.user, {
+      temperature: prompt.temperature,
+      max_tokens:  prompt.max_tokens
+    });
+    console.info(`[${PROMPT_VERSION}] improve-content ok | type=${type}`);
     res.json({ improved });
   } catch (err) {
-    console.error('improve-content error:', err.message);
+    console.error(`[${PROMPT_VERSION}] improve-content error | type=${type}:`, err.message);
     res.status(500).json({ error: 'Failed to improve content.' });
   }
 }
