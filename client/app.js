@@ -196,9 +196,18 @@ function makeAIButton(text, handler) {
   return btn;
 }
 
+// Collect, save, show indicator and render — used after any structural DOM change
+function saveAndSync() {
+  const data = collectFormData();
+  const json = JSON.stringify(data);
+  saveToLocalStorage(json);
+  showSaveIndicator();
+  renderPreview(data);
+}
+
 function makeRemoveButton(entry) {
   const btn = createElement('button', { type: 'button', class: 'btn-remove', text: '✕' });
-  btn.addEventListener('click', () => { entry.remove(); renderPreview(); });
+  btn.addEventListener('click', () => { entry.remove(); saveAndSync(); });
   return btn;
 }
 
@@ -207,13 +216,12 @@ function makeDuplicateButton(entry, type) {
   btn.title = 'Duplicate';
   btn.addEventListener('click', () => {
     const list  = document.getElementById(`${type}-list`);
-    const clone = ENTRY_BUILDERS[type](list.children.length);
-    // Copy current field values into the clone
+    const clone = ENTRY_BUILDERS[type]();
     const srcInputs  = entry.querySelectorAll('input, textarea');
     const destInputs = clone.querySelectorAll('input, textarea');
     srcInputs.forEach((src, i) => { if (destInputs[i]) destInputs[i].value = src.value; });
     entry.after(clone);
-    renderPreview();
+    saveAndSync();
   });
   return btn;
 }
@@ -317,7 +325,7 @@ function initDragAndDrop(listId) {
     if (entry) entry.classList.remove('dragging');
     list.querySelectorAll('.dynamic-entry').forEach(el => el.classList.remove('drag-over'));
     dragSrc = null;
-    renderPreview();
+    saveAndSync();
   });
   list.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -335,7 +343,8 @@ function initDragAndDrop(listId) {
 
 function addEntry(type) {
   const list = document.getElementById(`${type}-list`);
-  list.appendChild(ENTRY_BUILDERS[type](list.children.length));
+  list.appendChild(ENTRY_BUILDERS[type]());
+  saveAndSync();
 }
 
 // ─────────────────────────────────────────────
