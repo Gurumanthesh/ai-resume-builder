@@ -1,10 +1,9 @@
-const openai  = require("../utils/openai");
-const process = require("process");
+const openai = require('../utils/openai');
 
 // ── Shared: call Ollama via OpenAI-compatible API ──
 async function chat(systemPrompt, userPrompt) {
   const response = await openai.chat.completions.create({
-    model:       process.env.OLLAMA_MODEL || "llama3.1:8b",
+    model:       process.env.OLLAMA_MODEL || 'llama3.1:8b',
     messages:    [
       { role: "system", content: systemPrompt },
       { role: "user",   content: userPrompt   }

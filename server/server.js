@@ -33,6 +33,11 @@ app.get("/api/csrf-token", (req, res) => {
 // ── API Routes (CSRF protected) ──
 app.use("/api", doubleCsrfProtection, require("./routes/resume"));
 
+// ── 404 handler for unmatched /api routes ──
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
 // ── Serve Static Frontend ──
 app.use(express.static(path.join(__dirname, "../client")));
 
@@ -41,15 +46,15 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/index.html"));
 });
 
-// ── Global Error Handler ──
-app.use((err, req, res, next) => {
-  if (err.code === "EBADCSRFTOKEN") {
-    return res.status(403).json({ error: "Invalid CSRF token" });
-  }
-  console.error("Unhandled error:", err.message);
-  res.status(500).json({ error: "Internal server error" });
-});
-
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
+});
+
+// ── Global Error Handler (must be after listen) ──
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN' || err.status === 403) {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  console.error('Unhandled error:', err.message);
+  res.status(500).json({ error: 'Internal server error' });
 });

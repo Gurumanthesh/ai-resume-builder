@@ -1,12 +1,14 @@
 // ─────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────
-const TOTAL_STEPS              = 5;
-const STORAGE_KEY              = 'resumeData';
-const ALLOWED_ENDPOINTS        = Object.freeze(['generate-summary', 'improve-content']);
-const API_BASE                 = '/api';
-let   currentStep              = 1;
-let   csrfToken                = null;
+const TOTAL_STEPS       = 5;
+const STORAGE_KEY       = 'resumeData';
+const ALLOWED_ENDPOINTS = Object.freeze(['generate-summary', 'improve-content']);
+const API_BASE          = '/api';
+let   currentStep       = 1;
+let   csrfToken         = null;
+let   lastSavedJSON    = null;   // single dirty-check for both save + render
+const inflightRequests  = new Set(); // prevent duplicate AI calls
 
 // ─────────────────────────────────────────────
 // Sanitize — prevent XSS in innerHTML
@@ -63,22 +65,27 @@ async function initCSRF() {
   }
 }
 
-async function callAPI(endpoint, body) {
+async function callAPI(endpoint, body, requestKey) {
   if (!ALLOWED_ENDPOINTS.includes(endpoint)) {
     throw new Error('Invalid API endpoint');
   }
-  const url = API_BASE + '/' + endpoint;
-  const res = await fetch(url, {
-    method:  'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': csrfToken || ''
-    },
-    body: JSON.stringify(body)
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'API request failed');
-  return data;
+  const key = requestKey || endpoint;  // per-button key prevents cross-entry blocking
+  if (inflightRequests.has(key)) {
+    throw new Error('Request already in progress');
+  }
+  inflightRequests.add(key);
+  try {
+    const res  = await fetch(`${API_BASE}/${endpoint}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken || '' },
+      body:    JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API request failed');
+    return data;
+  } finally {
+    inflightRequests.delete(key);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -99,11 +106,11 @@ function validateStep(step) {
 }
 
 // ─────────────────────────────────────────────
-// Progress Bar
+// Progress Bar — accepts pre-collected data to avoid redundant DOM walk
 // ─────────────────────────────────────────────
-function updateProgress() {
-  const data    = collectFormData();
-  const checks  = [
+function updateProgress(data) {
+  data = data || collectFormData();
+  const checks = [
     data.personal.fullName,
     data.personal.email,
     data.personal.phone,
@@ -113,8 +120,8 @@ function updateProgress() {
     data.projects.some(p => p.name),
     document.getElementById('aiSummary')?.value.trim()
   ];
-  const pct  = Math.round((checks.filter(Boolean).length / checks.length) * 100);
-  const bar  = document.getElementById('progress-bar');
+  const pct   = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  const bar   = document.getElementById('progress-bar');
   const label = document.getElementById('progress-label');
   if (bar)   bar.style.width   = pct + '%';
   if (label) label.textContent = pct + '% Complete';
@@ -126,7 +133,9 @@ function updateProgress() {
 function changeStep(direction) {
   if (direction > 0 && !validateStep(currentStep)) return;
 
-  saveToLocalStorage();
+  const data = collectFormData();   // single walk
+  const json = JSON.stringify(data);
+  saveToLocalStorage(json);
 
   const prev = currentStep;
   currentStep = Math.min(Math.max(currentStep + direction, 1), TOTAL_STEPS);
@@ -144,8 +153,8 @@ function changeStep(direction) {
   document.getElementById('btn-next').style.display   = currentStep < TOTAL_STEPS  ? 'inline-flex' : 'none';
   document.getElementById('btn-submit').style.display = currentStep === TOTAL_STEPS ? 'inline-flex' : 'none';
 
-  updateProgress();
-  renderPreview();
+  updateProgress(data);
+  renderPreview(data);
 }
 
 // ─────────────────────────────────────────────
@@ -257,11 +266,6 @@ function addEntry(type) {
   list.appendChild(ENTRY_BUILDERS[type](list.children.length));
 }
 
-function removeEntry(btn) {
-  btn.closest('.dynamic-entry').remove();
-  renderPreview();
-}
-
 // ─────────────────────────────────────────────
 // Collect Form Data
 // ─────────────────────────────────────────────
@@ -304,12 +308,17 @@ function collectFormData() {
 }
 
 // ─────────────────────────────────────────────
-// LocalStorage
+// LocalStorage — skips write when data unchanged; user-visible quota error
 // ─────────────────────────────────────────────
-function saveToLocalStorage() {
+// Accepts pre-serialized json string — caller owns stringify to avoid duplication
+function saveToLocalStorage(json) {
+  if (json === lastSavedJSON) return;
+  lastSavedJSON = json;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectFormData()));
+    localStorage.setItem(STORAGE_KEY, json);
   } catch (e) {
+    // Covers: QuotaExceededError, code 22 (Safari), SecurityError (incognito/private)
+    showToast('Unable to save: browser storage unavailable', 'error');
     console.warn('LocalStorage save failed:', e);
   }
 }
@@ -368,7 +377,7 @@ function loadFromLocalStorage() {
 }
 
 // ─────────────────────────────────────────────
-// Preview Renderer
+// Preview Renderer — accepts pre-collected data
 // ─────────────────────────────────────────────
 function renderBullets(text) {
   if (!text.trim()) return '';
@@ -380,8 +389,8 @@ function renderBullets(text) {
   return `<ul class="rv-bullets">${items}</ul>`;
 }
 
-function renderPreview() {
-  const data      = collectFormData();
+function renderPreview(data) {
+  data            = data || collectFormData();
   const p         = data.personal;
   const container = document.getElementById('resume-preview');
 
@@ -466,12 +475,6 @@ function renderPreview() {
   container.innerHTML = `<div class="resume-doc ${templateClass}" id="resume-doc">${innerContent}</div>`;
 }
 
-const debouncedRender = debounce(() => {
-  saveToLocalStorage();
-  updateProgress();
-  renderPreview();
-}, 150);
-
 // ─────────────────────────────────────────────
 // AI Loading State
 // ─────────────────────────────────────────────
@@ -521,7 +524,7 @@ async function improveBullets(btn) {
   }
   setButtonLoading(btn, true);
   try {
-    const { improved } = await callAPI('improve-content', { type: 'bullets', content: textarea.value });
+    const { improved } = await callAPI('improve-content', { type: 'bullets', content: textarea.value }, btn);
     textarea.value = improved;
     renderPreview();
     showToast('Bullets improved! ✨');
@@ -543,7 +546,7 @@ async function improveDescription(btn) {
   }
   setButtonLoading(btn, true);
   try {
-    const { improved } = await callAPI('improve-content', { type: 'description', content: textarea.value });
+    const { improved } = await callAPI('improve-content', { type: 'description', content: textarea.value }, btn);
     textarea.value = improved;
     renderPreview();
     showToast('Description improved! ✨');
@@ -577,20 +580,21 @@ function loadTheme() {
 // ─────────────────────────────────────────────
 let currentTemplate = 'classic';
 
-function switchTemplate(template) {
+function switchTemplate(template, skipRender = false) {
   currentTemplate = template;
   localStorage.setItem('template', template);
-
   document.querySelectorAll('.btn-template').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.template === template);
   });
-
-  renderPreview();
+  if (!skipRender) {
+    lastSavedJSON = null;  // force debounce to re-render even if form data unchanged
+    renderPreview();
+  }
 }
 
 function loadTemplate() {
   const saved = localStorage.getItem('template') || 'classic';
-  switchTemplate(saved);
+  switchTemplate(saved, true);  // skip render — loadFromLocalStorage renders after
 }
 
 // ─────────────────────────────────────────────
@@ -631,34 +635,54 @@ async function downloadPDF() {
 }
 
 // ─────────────────────────────────────────────
-// Auto-save Indicator
+// Auto-save Indicator — throttled to avoid rapid-fire aria-live announcements
 // ─────────────────────────────────────────────
-let saveTimer = null;
+let saveTimer    = null;
+let saveAnnounce = null;
 function showSaveIndicator() {
   const el = document.getElementById('save-indicator');
   if (!el) return;
-  el.textContent = '✔ Saved';
-  el.classList.add('visible');
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => el.classList.remove('visible'), 2000);
+  // Throttle the aria-live announcement — update text at most once per 300ms
+  clearTimeout(saveAnnounce);
+  saveAnnounce = setTimeout(() => {
+    el.textContent = '✔ Saved';
+    el.classList.add('visible');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      el.classList.remove('visible');
+      el.textContent = '';    // clear so next save re-announces
+    }, 2000);
+  }, 300);
 }
 
 // ─────────────────────────────────────────────
 // Clear Form
 // ─────────────────────────────────────────────
 function clearForm() {
-  if (!confirm('Clear all form data? This cannot be undone.')) return;
+  if (!confirm('Clear all resume data? This cannot be undone.')) return;
   localStorage.removeItem(STORAGE_KEY);
+  lastSavedJSON = '';   // reset single dirty-check so next tick always saves + re-renders
   document.getElementById('resume-form').reset();
-  // Reset dynamic lists to single empty entry
   ['education', 'experience', 'projects'].forEach(type => {
     const list = document.getElementById(`${type}-list`);
     list.innerHTML = '';
     list.appendChild(ENTRY_BUILDERS[type](0));
   });
   document.getElementById('aiSummary').value = '';
+
+  // Reset step directly without going through changeStep to avoid stale-state issues
+  document.getElementById(`step-${currentStep}`).classList.remove('active');
   currentStep = 1;
-  changeStep(0);
+  document.getElementById('step-1').classList.add('active');
+  document.querySelectorAll('.steps-indicator .step').forEach(node => {
+    const n = parseInt(node.dataset.step);
+    node.classList.toggle('active', n === 1);
+    node.classList.remove('completed');
+  });
+  document.getElementById('btn-back').style.display   = 'none';
+  document.getElementById('btn-next').style.display   = 'inline-flex';
+  document.getElementById('btn-submit').style.display = 'none';
+
   updateProgress();
   renderPreview();
   showToast('Form cleared');
@@ -668,7 +692,8 @@ function clearForm() {
 // Submit
 // ─────────────────────────────────────────────
 function submitForm() {
-  saveToLocalStorage();
+  const data = collectFormData();
+  saveToLocalStorage(JSON.stringify(data));
   showToast('Resume saved! Click ⬇ Download PDF to export ✅');
 }
 
@@ -676,14 +701,35 @@ function submitForm() {
 // Init
 // ─────────────────────────────────────────────
 const debouncedSaveAndRender = debounce(() => {
-  saveToLocalStorage();
-  showSaveIndicator();
-  updateProgress();
-  renderPreview();
+  const data = collectFormData();   // single DOM walk per debounce tick
+  const json = JSON.stringify(data);
+
+  const changed = json !== lastSavedJSON;
+  saveToLocalStorage(json);   // single stringify reused; no-op if unchanged
+  if (changed) showSaveIndicator();
+  if (!changed) return;       // data unchanged — skip render + progress
+  updateProgress(data);
+  renderPreview(data);
 }, 150);
 
 document.getElementById('resume-form').addEventListener('input', debouncedSaveAndRender);
+
+// Cross-tab sync: if another tab saves, reload data into this tab's form.
+// Only fires in OTHER tabs (storage event never fires in the tab that wrote it).
+window.addEventListener('storage', (e) => {
+  if (e.key !== STORAGE_KEY || !e.newValue) return;
+  try {
+    // Don't overwrite if this tab's data is the same (avoids flicker on same data)
+    if (e.newValue === lastSavedJSON) return;
+    lastSavedJSON = e.newValue;          // sync our dirty-check to avoid re-writing
+    const data = JSON.parse(e.newValue);
+    loadFromLocalStorage();              // re-populate form fields
+    const fresh = collectFormData();
+    updateProgress(fresh);
+    renderPreview(fresh);
+  } catch (_) {}
+});
 loadTheme();
-loadFromLocalStorage(); // load data first
+loadTemplate();         // set currentTemplate before first render
+loadFromLocalStorage(); // loads data then triggers single renderPreview
 initCSRF();
-loadTemplate();         // then render with correct template

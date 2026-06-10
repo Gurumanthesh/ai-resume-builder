@@ -1,5 +1,4 @@
-const OpenAI  = require("openai");
-const process = require("process");
+const OpenAI = require('openai');
 
 const openai = new OpenAI({
   apiKey:  process.env.OLLAMA_API_KEY  || "ollama",

@@ -8,10 +8,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
     <link rel="stylesheet" href="style.css" />
+    <meta name="description" content="AI-powered resume builder with live preview and PDF export" />
+    <meta name="theme-color" content="#6c63ff" />
   </head>
   <body>
     <!-- Header -->
-    <header class="main-header">
+    <header class="main-header" id="main-header">
       <div class="header-left">
         <h1>🧠 AI Resume Builder</h1>
         <p>Build a professional resume in minutes</p>
@@ -24,7 +26,8 @@
           <button class="btn-template" data-template="modern" onclick="switchTemplate('modern')">Modern</button>
         </div>
         <!-- Dark Mode Toggle -->
-        <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+        <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+        <button class="btn-clear" onclick="clearForm()" title="Clear all data" aria-label="Clear form">🗑</button>
       </div>
     </header>
 
@@ -32,6 +35,11 @@
 
       <!-- LEFT: Form Panel -->
       <div class="form-panel">
+
+        <!-- Auto-save Indicator -->
+        <div class="save-bar">
+          <span id="save-indicator" class="save-indicator" aria-live="polite" aria-atomic="true"></span>
+        </div>
 
         <!-- Progress Bar -->
         <div class="progress-container">
@@ -234,5 +242,6 @@
 
     <script src="html2pdf.min.js"></script>
     <script src="app.js"></script>
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>

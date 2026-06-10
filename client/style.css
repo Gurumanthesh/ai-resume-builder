@@ -9,6 +9,7 @@
   --primary-light: #ede9ff;
   --success:       #10b981;
   --danger:        #ef4444;
+  --warning:       #f59e0b;
   --bg:            #f0f2fa;
   --card:          #ffffff;
   --text:          #0f0e17;
@@ -24,6 +25,7 @@
   --transition:    0.2s ease;
   --font-sans:     'Inter', 'Segoe UI', system-ui, sans-serif;
   --font-serif:    'Georgia', 'Times New Roman', serif;
+  --header-h:      64px;
 }
 
 html { scroll-behavior: smooth; }
@@ -42,15 +44,21 @@ body {
 .app-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  min-height: calc(100vh - 72px);
+  height: calc(100vh - var(--header-h));     /* fallback */
+  height: calc(100dvh - var(--header-h));    /* modern: avoids mobile browser chrome */
+  overflow: hidden;
 }
 
 .form-panel {
-  padding: 28px 28px 40px;
+  padding: 24px 28px 40px;
   background: var(--bg);
   overflow-y: auto;
   border-right: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.form-panel::-webkit-scrollbar { width: 5px; }
+.form-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
 /* ─────────────────────────────────────────────
    Step Indicators
@@ -185,6 +193,7 @@ body {
   transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
   outline: none;
   resize: vertical;
+  width: 100%;
 }
 
 .form-group input:focus,
@@ -350,7 +359,11 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.preview-panel::-webkit-scrollbar { width: 5px; }
+.preview-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 
 .preview-header {
   display: flex;
@@ -523,7 +536,15 @@ body {
 }
 
 [data-theme="dark"] .main-header {
+  background: rgba(26,26,46,0.95);           /* fallback */
   background: rgba(26,26,46,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom-color: #2a2a45;
+}
+
+[data-theme="dark"] .btn-clear:hover {
+  background: rgba(239,68,68,0.15);
 }
 
 [data-theme="dark"] .preview-panel {
@@ -551,8 +572,17 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 28px;
-  text-align: left;
+  padding: 0 28px;
+  height: var(--header-h);
+  background: rgba(255,255,255,0.9);         /* fallback for no backdrop-filter */
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 var(--border);
 }
 
 .header-left h1 {
@@ -671,16 +701,72 @@ body {
 
 .resume-doc.template-modern .rv-bullets li::marker { color: #7c3aed; }
 
+/* ─────────────────────────────────────────────
+   Responsive
+───────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .app-layout { grid-template-columns: 1fr; }
+  .app-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: calc(100vh - var(--header-h));   /* fallback */
+    min-height: calc(100dvh - var(--header-h));
+    overflow: visible;
+  }
   .form-panel { border-right: none; border-bottom: 1px solid var(--border); }
   .resume-doc { padding: 28px 22px; }
+  .main-header { padding: 0 16px; }
+  .header-left p { display: none; }
 }
 
 @media (max-width: 560px) {
   .form-grid  { grid-template-columns: 1fr; }
   #resume-form { padding: 20px; }
-  .main-header h1 { font-size: 1.3rem; }
+  .header-left h1 { font-size: 1.15rem; }
+  .template-label { display: none; }
+}
+
+/* Save bar */
+.save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+  min-height: 18px;
+}
+
+.save-indicator {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--success);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.save-indicator.visible { opacity: 1; }
+
+/* Clear button */
+.btn-clear {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-muted);
+}
+.btn-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: #fff0f0;
+  transform: scale(1.08);
 }
 
 /* ─────────────────────────────────────────────
