@@ -202,10 +202,34 @@ function makeRemoveButton(entry) {
   return btn;
 }
 
+function makeDuplicateButton(entry, type) {
+  const btn = createElement('button', { type: 'button', class: 'btn-duplicate', text: '⧉' });
+  btn.title = 'Duplicate';
+  btn.addEventListener('click', () => {
+    const list  = document.getElementById(`${type}-list`);
+    const clone = ENTRY_BUILDERS[type](list.children.length);
+    // Copy current field values into the clone
+    const srcInputs  = entry.querySelectorAll('input, textarea');
+    const destInputs = clone.querySelectorAll('input, textarea');
+    srcInputs.forEach((src, i) => { if (destInputs[i]) destInputs[i].value = src.value; });
+    entry.after(clone);
+    renderPreview();
+  });
+  return btn;
+}
+
+function makeEntryControls(entry, type) {
+  const wrap = createElement('div', { class: 'entry-controls' });
+  wrap.appendChild(makeDuplicateButton(entry, type));
+  wrap.appendChild(makeRemoveButton(entry));
+  return wrap;
+}
+
 function buildEducationEntry(i) {
-  const entry = createElement('div', { class: 'dynamic-entry', 'data-index': i });
+  const entry = createElement('div', { class: 'dynamic-entry', 'data-index': i, draggable: 'true' });
   const grid  = createElement('div', { class: 'form-grid' });
-  entry.appendChild(makeRemoveButton(entry));
+  entry.appendChild(createElement('div', { class: 'drag-handle', text: '☰' }));
+  entry.appendChild(makeEntryControls(entry, 'education'));
   [
     ['Degree',         'edu-degree',      'B.Sc. Computer Science'],
     ['Institution',    'edu-institution', 'MIT'],
@@ -220,9 +244,10 @@ function buildEducationEntry(i) {
 }
 
 function buildExperienceEntry(i) {
-  const entry = createElement('div', { class: 'dynamic-entry', 'data-index': i });
+  const entry = createElement('div', { class: 'dynamic-entry', 'data-index': i, draggable: 'true' });
   const grid  = createElement('div', { class: 'form-grid' });
-  entry.appendChild(makeRemoveButton(entry));
+  entry.appendChild(createElement('div', { class: 'drag-handle', text: '☰' }));
+  entry.appendChild(makeEntryControls(entry, 'experience'));
   [
     ['Job Title', 'exp-title',    'Software Engineer'],
     ['Company',   'exp-company',  'Google'],
@@ -243,9 +268,10 @@ function buildExperienceEntry(i) {
 }
 
 function buildProjectEntry(i) {
-  const entry = createElement('div', { class: 'dynamic-entry', 'data-index': i });
+  const entry = createElement('div', { class: 'dynamic-entry', 'data-index': i, draggable: 'true' });
   const grid  = createElement('div', { class: 'form-grid' });
-  entry.appendChild(makeRemoveButton(entry));
+  entry.appendChild(createElement('div', { class: 'drag-handle', text: '☰' }));
+  entry.appendChild(makeEntryControls(entry, 'projects'));
   [
     ['Project Name',           'proj-name',   'AI Resume Builder'],
     ['Tech Stack',             'proj-tech',   'Node.js, React, OpenAI'],
@@ -271,6 +297,41 @@ const ENTRY_BUILDERS = {
   experience: buildExperienceEntry,
   projects:   buildProjectEntry
 };
+
+// ─────────────────────────────────────────────
+// Drag-and-drop reordering within a list
+// ─────────────────────────────────────────────
+let dragSrc = null;
+
+function initDragAndDrop(listId) {
+  const list = document.getElementById(listId);
+  list.addEventListener('dragstart', (e) => {
+    const entry = e.target.closest('.dynamic-entry');
+    if (!entry) return;
+    dragSrc = entry;
+    entry.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  list.addEventListener('dragend', (e) => {
+    const entry = e.target.closest('.dynamic-entry');
+    if (entry) entry.classList.remove('dragging');
+    list.querySelectorAll('.dynamic-entry').forEach(el => el.classList.remove('drag-over'));
+    dragSrc = null;
+    renderPreview();
+  });
+  list.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    const entry = e.target.closest('.dynamic-entry');
+    if (!entry || entry === dragSrc) return;
+    list.querySelectorAll('.dynamic-entry').forEach(el => el.classList.remove('drag-over'));
+    entry.classList.add('drag-over');
+    // Insert before or after based on pointer position
+    const rect = entry.getBoundingClientRect();
+    const mid  = rect.top + rect.height / 2;
+    if (e.clientY < mid) list.insertBefore(dragSrc, entry);
+    else                  list.insertBefore(dragSrc, entry.nextSibling);
+  });
+}
 
 function addEntry(type) {
   const list = document.getElementById(`${type}-list`);
@@ -741,6 +802,13 @@ window.addEventListener('storage', (e) => {
   } catch (_) {}
 });
 loadTheme();
-loadTemplate();         // set currentTemplate before first render
-loadFromLocalStorage(); // loads data then triggers single renderPreview
+loadTemplate();
+// Replace static HTML first entries with builder-generated ones (consistent controls)
+['education', 'experience', 'projects'].forEach(type => {
+  const list = document.getElementById(`${type}-list`);
+  list.innerHTML = '';
+  list.appendChild(ENTRY_BUILDERS[type](0));
+  initDragAndDrop(`${type}-list`);
+});
+loadFromLocalStorage();
 initCSRF();

@@ -230,9 +230,6 @@ body {
 }
 
 .btn-remove {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   background: #fee2e2;
   color: var(--danger);
   border: none;
@@ -244,6 +241,52 @@ body {
   transition: background var(--transition);
 }
 .btn-remove:hover { background: #fecaca; }
+
+.btn-duplicate {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 3px 9px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.btn-duplicate:hover { background: #d8d3ff; }
+
+.entry-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.drag-handle {
+  position: absolute;
+  top: 12px;
+  left: 10px;
+  color: var(--border);
+  font-size: 0.85rem;
+  cursor: grab;
+  user-select: none;
+  transition: color var(--transition);
+  line-height: 1;
+}
+.drag-handle:active { cursor: grabbing; }
+.dynamic-entry:hover .drag-handle { color: var(--text-muted); }
+
+.dynamic-entry.dragging {
+  opacity: 0.4;
+  border-style: dashed;
+}
+.dynamic-entry.drag-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.dynamic-entry { padding-left: 30px; }
 
 .btn-add {
   width: 100%;
