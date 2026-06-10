@@ -52,12 +52,12 @@ app.use((req, res, next) => {
 const ALLOWED_ORIGIN = process.env.CLIENT_ORIGIN || `http://localhost:${PORT}`;
 app.use(cors({ origin: ALLOWED_ORIGIN, credentials: true }));
 
-// ── Body parser with payload guard ──
+// ── Body parser + cookie parser (must come before CSRF setup) ──
 app.use(express.json({ limit: "10kb" }));
 app.use(cookieParser());
 
 // ── CSRF protection via csrf-csrf (double-submit cookie pattern) ──
-const { generateToken, doubleCsrfProtection } = doubleCsrf({
+const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret:     () => process.env.CSRF_SECRET || "default-csrf-secret-change-in-prod",
   cookieName:    "x-csrf-token",  // removed __Host- prefix — requires HTTPS, breaks on localhost
   cookieOptions: { sameSite: "strict", secure: process.env.NODE_ENV === "production", httpOnly: true },
@@ -79,7 +79,7 @@ const aiLimiter = rateLimit({
 
 // ── CSRF token endpoint ──
 app.get("/api/csrf-token", (req, res) => {
-  res.json({ token: generateToken(req, res) });
+  res.json({ token: generateCsrfToken(req, res) });
 });
 
 // ── API Routes (CSRF + rate limited) ──
