@@ -58,11 +58,13 @@ app.use(cookieParser());
 
 // ── CSRF protection via csrf-csrf (double-submit cookie pattern) ──
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
-  getSecret:     () => process.env.CSRF_SECRET || "default-csrf-secret-change-in-prod",
-  cookieName:    "x-csrf-token",  // removed __Host- prefix — requires HTTPS, breaks on localhost
-  cookieOptions: { sameSite: "strict", secure: process.env.NODE_ENV === "production", httpOnly: true },
-  size:          64,
-  getTokenFromRequest: (req) => req.headers["x-csrf-token"]
+  getSecret:              () => process.env.CSRF_SECRET || "default-csrf-secret-change-in-prod",
+  // v4 requires getSessionIdentifier — use IP + UA as a stateless session proxy
+  getSessionIdentifier:   (req) => req.ip + (req.headers['user-agent'] || ''),
+  cookieName:             "x-csrf-token",
+  cookieOptions:          { sameSite: "strict", secure: process.env.NODE_ENV === "production", httpOnly: true },
+  size:                   64,
+  getTokenFromRequest:    (req) => req.headers["x-csrf-token"]
 });
 
 // ── Rate limiting — prevents Ollama abuse; logs exceeded attempts for abuse monitoring ──
