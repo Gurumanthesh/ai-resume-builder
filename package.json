@@ -17,6 +17,9 @@
     "express-rate-limit": "^8.5.2",
     "openai": "^4.52.7"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "nodemon": "^3.1.4"
   }
