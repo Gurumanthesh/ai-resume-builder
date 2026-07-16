@@ -25,7 +25,7 @@ function safeUrl(str) {
   try {
     const url = new URL(str);
     return (url.protocol === 'https:' || url.protocol === 'http:') ? str : '';
-  } catch {
+  } catch (e) {
     return '';
   }
 }
