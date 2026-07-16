@@ -405,6 +405,21 @@ function saveToLocalStorage(json) {
   }
 }
 
+function rebuildEntryList(type, entries = []) {
+  const list = document.getElementById(`${type}-list`);
+  if (!list) return [];
+
+  list.innerHTML = '';
+  const sourceEntries = entries && entries.length ? entries : [{}];
+  const builtEntries = sourceEntries.map((entryData, index) => {
+    const el = ENTRY_BUILDERS[type](index);
+    list.appendChild(el);
+    return { el, entryData };
+  });
+
+  return builtEntries;
+}
+
 function loadFromLocalStorage() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -422,36 +437,36 @@ function loadFromLocalStorage() {
     if (s.soft)      document.getElementById('softSkills').value      = s.soft;
     if (s.languages) document.getElementById('languages').value       = s.languages;
 
-    (data.education || []).forEach((edu, i) => {
-      if (i > 0) addEntry('education');
-      const node = document.querySelectorAll('#education-list .dynamic-entry')[i];
-      if (!node) return;
-      node.querySelector('.edu-degree').value      = edu.degree      || '';
-      node.querySelector('.edu-institution').value = edu.institution || '';
-      node.querySelector('.edu-year').value        = edu.year        || '';
-      node.querySelector('.edu-gpa').value         = edu.gpa         || '';
+    const educationEntries = rebuildEntryList('education', data.education || []);
+    educationEntries.forEach(({ el, entryData }, i) => {
+      const edu = (data.education || [])[i] || {};
+      if (!el) return;
+      el.querySelector('.edu-degree').value      = edu.degree      || '';
+      el.querySelector('.edu-institution').value = edu.institution || '';
+      el.querySelector('.edu-year').value        = edu.year        || '';
+      el.querySelector('.edu-gpa').value         = edu.gpa         || '';
     });
 
-    (data.experience || []).forEach((exp, i) => {
-      if (i > 0) addEntry('experience');
-      const node = document.querySelectorAll('#experience-list .dynamic-entry')[i];
-      if (!node) return;
-      node.querySelector('.exp-title').value    = exp.title    || '';
-      node.querySelector('.exp-company').value  = exp.company  || '';
-      node.querySelector('.exp-duration').value = exp.duration || '';
-      node.querySelector('.exp-location').value = exp.location || '';
-      node.querySelector('.exp-bullets').value  = exp.bullets  || '';
+    const experienceEntries = rebuildEntryList('experience', data.experience || []);
+    experienceEntries.forEach(({ el }, i) => {
+      const exp = (data.experience || [])[i] || {};
+      if (!el) return;
+      el.querySelector('.exp-title').value    = exp.title    || '';
+      el.querySelector('.exp-company').value  = exp.company  || '';
+      el.querySelector('.exp-duration').value = exp.duration || '';
+      el.querySelector('.exp-location').value = exp.location || '';
+      el.querySelector('.exp-bullets').value  = exp.bullets  || '';
     });
 
-    (data.projects || []).forEach((proj, i) => {
-      if (i > 0) addEntry('projects');
-      const node = document.querySelectorAll('#projects-list .dynamic-entry')[i];
-      if (!node) return;
-      node.querySelector('.proj-name').value   = proj.name   || '';
-      node.querySelector('.proj-tech').value   = proj.tech   || '';
-      node.querySelector('.proj-url').value    = proj.url    || '';
-      node.querySelector('.proj-github').value = proj.github || '';
-      node.querySelector('.proj-desc').value   = proj.desc   || '';
+    const projectEntries = rebuildEntryList('projects', data.projects || []);
+    projectEntries.forEach(({ el }, i) => {
+      const proj = (data.projects || [])[i] || {};
+      if (!el) return;
+      el.querySelector('.proj-name').value   = proj.name   || '';
+      el.querySelector('.proj-tech').value   = proj.tech   || '';
+      el.querySelector('.proj-url').value    = proj.url    || '';
+      el.querySelector('.proj-github').value = proj.github || '';
+      el.querySelector('.proj-desc').value   = proj.desc   || '';
     });
   } catch (e) {
     console.warn('LocalStorage load failed:', e);
