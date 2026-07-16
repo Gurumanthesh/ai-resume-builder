@@ -793,7 +793,9 @@ const debouncedSaveAndRender = debounce(() => {
   renderPreview(data);
 }, 150);
 
-document.getElementById('resume-form').addEventListener('input', debouncedSaveAndRender);
+const resumeForm = document.getElementById('resume-form');
+resumeForm.addEventListener('submit', e => e.preventDefault());
+resumeForm.addEventListener('input', debouncedSaveAndRender);
 
 // Cross-tab sync: if another tab saves, reload data into this tab's form.
 // Only fires in OTHER tabs (storage event never fires in the tab that wrote it).
