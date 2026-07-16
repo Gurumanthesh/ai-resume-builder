@@ -806,6 +806,46 @@ const resumeForm = document.getElementById('resume-form');
 resumeForm.addEventListener('submit', e => e.preventDefault());
 resumeForm.addEventListener('input', debouncedSaveAndRender);
 
+document.addEventListener('click', (event) => {
+  const target = event.target.closest('button');
+  if (!target) return;
+
+  if (target.id === 'btn-next') {
+    event.preventDefault();
+    changeStep(1);
+  } else if (target.id === 'btn-back') {
+    event.preventDefault();
+    changeStep(-1);
+  } else if (target.id === 'btn-submit') {
+    event.preventDefault();
+    submitForm();
+  } else if (target.id === 'btn-gen-summary') {
+    event.preventDefault();
+    generateSummary();
+  } else if (target.id === 'btn-download') {
+    event.preventDefault();
+    downloadPDF();
+  } else if (target.classList.contains('btn-theme')) {
+    event.preventDefault();
+    toggleTheme();
+  } else if (target.classList.contains('btn-clear')) {
+    event.preventDefault();
+    clearForm();
+  } else if (target.dataset.addEntry) {
+    event.preventDefault();
+    addEntry(target.dataset.addEntry);
+  } else if (target.dataset.action === 'improve-bullets') {
+    event.preventDefault();
+    improveBullets(target);
+  } else if (target.dataset.action === 'improve-description') {
+    event.preventDefault();
+    improveDescription(target);
+  } else if (target.classList.contains('btn-template')) {
+    event.preventDefault();
+    switchTemplate(target.dataset.template);
+  }
+});
+
 // Cross-tab sync: if another tab saves, reload data into this tab's form.
 // Only fires in OTHER tabs (storage event never fires in the tab that wrote it).
 window.addEventListener('storage', (e) => {

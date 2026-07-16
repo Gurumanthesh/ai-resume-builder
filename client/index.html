@@ -30,12 +30,12 @@
         <!-- Template Switcher -->
         <div class="template-switcher">
           <span class="template-label">Template:</span>
-          <button class="btn-template active" data-template="classic" onclick="switchTemplate('classic')">Classic</button>
-          <button class="btn-template" data-template="modern" onclick="switchTemplate('modern')">Modern</button>
+          <button class="btn-template active" data-template="classic">Classic</button>
+          <button class="btn-template" data-template="modern">Modern</button>
         </div>
         <!-- Dark Mode Toggle -->
-        <button class="btn-theme" id="btn-theme" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
-        <button class="btn-clear" onclick="clearForm()" title="Clear all data" aria-label="Clear form">🗑</button>
+        <button class="btn-theme" id="btn-theme" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+        <button class="btn-clear" title="Clear all data" aria-label="Clear form">🗑</button>
       </div>
     </header>
 
@@ -102,7 +102,7 @@
             <div class="form-group" style="margin-top:8px">
               <label for="aiSummary">Professional Summary</label>
               <textarea id="aiSummary" rows="3" placeholder="Click ✨ Generate to create an AI-powered summary..."></textarea>
-              <button type="button" class="btn-ai" id="btn-gen-summary" onclick="generateSummary()">✨ Generate Summary</button>
+              <button type="button" class="btn-ai" id="btn-gen-summary">✨ Generate Summary</button>
             </div>
           </div>
 
@@ -131,7 +131,7 @@
                 </div>
               </div>
             </div>
-            <button type="button" class="btn-add" onclick="addEntry('education')">+ Add Education</button>
+            <button type="button" class="btn-add" data-add-entry="education">+ Add Education</button>
           </div>
 
           <!-- Step 3: Skills -->
@@ -179,11 +179,11 @@
                 <div class="form-group">
                   <label>Responsibilities / Achievements</label>
                   <textarea class="exp-bullets" rows="4" placeholder="• Built REST APIs that reduced latency by 30%&#10;• Led a team of 4 engineers..."></textarea>
-                  <button type="button" class="btn-ai" onclick="improveBullets(this)">✨ Improve Bullets</button>
+                  <button type="button" class="btn-ai" data-action="improve-bullets">✨ Improve Bullets</button>
                 </div>
               </div>
             </div>
-            <button type="button" class="btn-add" onclick="addEntry('experience')">+ Add Experience</button>
+            <button type="button" class="btn-add" data-add-entry="experience">+ Add Experience</button>
           </div>
 
           <!-- Step 5: Projects -->
@@ -212,18 +212,18 @@
                 <div class="form-group">
                   <label>Description</label>
                   <textarea class="proj-desc" rows="3" placeholder="Describe what the project does and your role..."></textarea>
-                  <button type="button" class="btn-ai" onclick="improveDescription(this)">✨ Improve Description</button>
+                  <button type="button" class="btn-ai" data-action="improve-description">✨ Improve Description</button>
                 </div>
               </div>
             </div>
-            <button type="button" class="btn-add" onclick="addEntry('projects')">+ Add Project</button>
+            <button type="button" class="btn-add" data-add-entry="projects">+ Add Project</button>
           </div>
 
           <!-- Navigation Buttons -->
           <div class="form-nav">
-            <button type="button" id="btn-back" class="btn-secondary" onclick="changeStep(-1)" style="display:none">← Back</button>
-            <button type="button" id="btn-next" class="btn-primary" onclick="changeStep(1)">Next →</button>
-            <button type="button" id="btn-submit" class="btn-primary" style="display:none" onclick="submitForm()">Build Resume ✨</button>
+            <button type="button" id="btn-back" class="btn-secondary" style="display:none">← Back</button>
+            <button type="button" id="btn-next" class="btn-primary">Next →</button>
+            <button type="button" id="btn-submit" class="btn-primary" style="display:none">Build Resume ✨</button>
           </div>
 
         </form>
@@ -235,7 +235,7 @@
           <span>📄 Live Preview</span>
           <div class="preview-header-actions">
             <span class="preview-badge">ATS Friendly</span>
-            <button class="btn-download" id="btn-download" onclick="downloadPDF()">⬇ Download PDF</button>
+            <button class="btn-download" id="btn-download">⬇ Download PDF</button>
           </div>
         </div>
         <div class="resume-preview" id="resume-preview">
