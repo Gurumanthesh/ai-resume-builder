@@ -106,9 +106,8 @@ function validateStep(step) {
   if (step === 1) {
     const name  = document.getElementById('fullName')?.value.trim();
     const email = document.getElementById('email')?.value.trim();
-    if (!name)  { showToast('Please enter your full name', 'error');  return false; }
-    if (!email) { showToast('Please enter your email', 'error');       return false; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!name)  showToast('Tip: Enter your full name for a complete resume', 'info');
+    else if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       showToast('Please enter a valid email address', 'error');
       return false;
     }
@@ -823,3 +822,30 @@ loadTemplate();
 });
 loadFromLocalStorage();
 initCSRF();
+
+// Step indicator dot click navigation
+document.querySelectorAll('.steps-indicator .step').forEach(node => {
+  node.style.cursor = 'pointer';
+  node.addEventListener('click', () => {
+    const target = parseInt(node.dataset.step);
+    if (target === currentStep) return;
+    const direction = target > currentStep ? 1 : -1;
+    if (direction > 0 && !validateStep(currentStep)) return;
+    const prev = currentStep;
+    currentStep = target;
+    document.getElementById(`step-${prev}`).classList.remove('active');
+    document.getElementById(`step-${currentStep}`).classList.add('active');
+    document.querySelectorAll('.steps-indicator .step').forEach(n => {
+      const s = parseInt(n.dataset.step);
+      n.classList.toggle('active',    s === currentStep);
+      n.classList.toggle('completed', s < currentStep);
+    });
+    document.getElementById('btn-back').style.display   = currentStep > 1           ? 'inline-flex' : 'none';
+    document.getElementById('btn-next').style.display   = currentStep < TOTAL_STEPS ? 'inline-flex' : 'none';
+    document.getElementById('btn-submit').style.display = currentStep === TOTAL_STEPS ? 'inline-flex' : 'none';
+    const data = collectFormData();
+    saveToLocalStorage(JSON.stringify(data));
+    updateProgress(data);
+    renderPreview(data);
+  });
+});
