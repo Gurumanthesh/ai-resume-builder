@@ -199,8 +199,10 @@ function makeAIButton(text, handler) {
 function saveAndSync() {
   const data = collectFormData();
   const json = JSON.stringify(data);
+  if (json === lastSavedJSON) return;
   saveToLocalStorage(json);
   showSaveIndicator();
+  updateProgress(data);
   renderPreview(data);
 }
 
@@ -469,7 +471,16 @@ function renderBullets(text) {
   return `<ul class="rv-bullets">${items}</ul>`;
 }
 
+let renderPending = false;
 function renderPreview(data) {
+  if (renderPending) return;
+  renderPending = true;
+  requestAnimationFrame(() => {
+    renderPending = false;
+    _renderPreview(data);
+  });
+}
+function _renderPreview(data) {
   data            = data || collectFormData();
   const p         = data.personal;
   const container = document.getElementById('resume-preview');
@@ -781,16 +792,15 @@ function submitForm() {
 // Init
 // ─────────────────────────────────────────────
 const debouncedSaveAndRender = debounce(() => {
-  const data = collectFormData();   // single DOM walk per debounce tick
+  const data = collectFormData();
   const json = JSON.stringify(data);
-
   const changed = json !== lastSavedJSON;
-  saveToLocalStorage(json);   // single stringify reused; no-op if unchanged
+  saveToLocalStorage(json);
   if (changed) showSaveIndicator();
-  if (!changed) return;       // data unchanged — skip render + progress
+  if (!changed) return;
   updateProgress(data);
   renderPreview(data);
-}, 150);
+}, 400);
 
 const resumeForm = document.getElementById('resume-form');
 resumeForm.addEventListener('submit', e => e.preventDefault());
