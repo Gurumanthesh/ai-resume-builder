@@ -92,6 +92,16 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API endpoint not found' });
 });
 
+// ── Prevent browsers from caching the app shell and scripts while developing ──
+app.use((req, res, next) => {
+  if (req.method === 'GET' && /\.(html|js|css|svg|png|jpg|jpeg|gif|webp)$/.test(req.path)) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 // ── Serve Static Frontend ──
 app.use(express.static(path.join(__dirname, "../client")));
 
