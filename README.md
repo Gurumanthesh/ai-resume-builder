@@ -4,6 +4,14 @@ A production-ready, AI-powered resume builder with live preview, PDF export, dar
 
 ---
 
+## 📸 Screenshots
+
+| Home | AI Generation | PDF Export |
+|------|---------------|------------|
+| ![Home](images/home.png) | ![AI](images/ai.png) | ![PDF](images/pdf.png) |
+
+---
+
 ## ✨ Features
 
 - **Multi-step form** — Personal Info, Education, Skills, Experience, Projects
