@@ -344,6 +344,10 @@ function initDragAndDrop(listId) {
 
 function addEntry(type) {
   const list = document.getElementById(`${type}-list`);
+  if (list.querySelectorAll('.dynamic-entry').length >= 5) {
+    showToast('Maximum 5 entries allowed', 'info');
+    return;
+  }
   list.appendChild(ENTRY_BUILDERS[type]());
   saveAndSync();
 }
@@ -410,7 +414,7 @@ function rebuildEntryList(type, entries = []) {
   if (!list) return [];
 
   list.innerHTML = '';
-  const sourceEntries = entries && entries.length ? entries : [{}];
+  const sourceEntries = (entries && entries.length ? entries : [{}]).slice(0, 5);
   const builtEntries = sourceEntries.map((entryData, index) => {
     const el = ENTRY_BUILDERS[type](index);
     list.appendChild(el);
