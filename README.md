@@ -6,9 +6,11 @@ A production-ready, AI-powered resume builder with live preview, PDF export, dar
 
 ## 📸 Screenshots
 
-| Home | AI Generation | PDF Export |
-|------|---------------|------------|
-| ![Home](images/home.png) | ![AI](images/ai.png) | ![PDF](images/pdf.png) |
+| Home | AI Generation |
+|------|---------------|
+| ![Home](images/home.png) | ![AI](images/ai.png) |
+
+📄 [View Sample Resume PDF](images/resume.pdf)
 
 ---
 
