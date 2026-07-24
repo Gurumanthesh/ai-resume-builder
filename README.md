@@ -14,19 +14,23 @@ A **production-ready, full-stack AI-powered Resume Builder** that enables users 
 
 ---
 
+<<<<<<< HEAD
+## 📸 Screenshots
+
+| Home | AI Generation |
+|------|---------------|
+| ![Home](images/home.png) | ![AI](images/ai.png) |
+
+📄 [View Sample Resume PDF](images/resume.pdf)
+
+---
+
+## ✨ Features
+=======
 # 🎥 Demo
+>>>>>>> a1e2d336b5ebfaa76cdc2ded673cd08a859b1725
 
 > **Demo Video:** *(Add your LinkedIn/YouTube video link after uploading)*
-
-## Screenshots
-
-| Home | Live Preview |
-|------|--------------|
-| ![](images/home.png) | ![](images/preview.png) |
-
-| AI Features | Exported Resume |
-|-------------|-----------------|
-| ![](images/ai.png) | ![](images/pdf.png) |
 
 ---
 
