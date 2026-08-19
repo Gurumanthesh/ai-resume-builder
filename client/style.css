@@ -509,7 +509,11 @@ body {
 .rv-contact a:hover { text-decoration: underline; }
 .rv-sep { color: #999; margin: 0 6px; }
 
-.rv-section { margin-top: 16px; }
+.rv-section {
+  margin-top: 16px;
+  break-inside: auto;
+  page-break-inside: auto;
+}
 
 .rv-section-title {
   font-size: 0.72rem;
@@ -521,9 +525,15 @@ body {
   padding-bottom: 3px;
   margin-bottom: 10px;
   font-family: var(--font-sans);
+  break-after: avoid;
+  page-break-after: avoid;
 }
 
-.rv-entry { margin-bottom: 11px; }
+.rv-entry {
+  margin-bottom: 11px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
 
 .rv-row {
   display: flex;

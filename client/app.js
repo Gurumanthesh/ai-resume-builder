@@ -729,6 +729,7 @@ async function downloadPDF() {
     filename,
     image:       { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, logging: false },
+    pagebreak:   { mode: ['css', 'legacy'], avoid: ['.rv-entry', '.rv-section-title'] },
     jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
 
