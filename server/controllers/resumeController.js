@@ -33,6 +33,13 @@ function sanitizeForPrompt(str) {
   return String(str || '').replace(/[\r\n\t]/g, ' ').trim().slice(0, 200);
 }
 
+function getTechnicalSkills(technical) {
+  if (Array.isArray(technical)) {
+    return technical.flatMap(entry => String(entry?.skills || '').split(','));
+  }
+  return String(technical || '').split(',');
+}
+
 async function chat(systemPrompt, userPrompt, { temperature = 0.4, max_tokens = 400 } = {}) {
   const response = await openai.chat.completions.create({
     model:    process.env.OLLAMA_MODEL || 'llama3.1:8b',
@@ -54,7 +61,7 @@ async function generateSummary(req, res) {
     return res.status(400).json({ error: 'fullName is required' });
   }
 
-  const topSkills = (skills?.technical || '').split(',').slice(0, 8)
+  const topSkills = getTechnicalSkills(skills?.technical).slice(0, 8)
     .map(s => sanitizeForPrompt(s)).join(', ') || 'N/A';
   const expLines  = (experience || [])
     .filter(e => e.title || e.company)

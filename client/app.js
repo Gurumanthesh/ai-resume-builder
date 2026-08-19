@@ -125,7 +125,7 @@ function updateProgress(data) {
     data.personal.email,
     data.personal.phone,
     data.education.some(e => e.degree),
-    data.skills.technical,
+    normalizeTechnicalSkills(data.skills.technical).some(entry => entry.category || entry.skills),
     data.experience.some(e => e.title),
     data.projects.some(p => p.name),
     document.getElementById('aiSummary')?.value.trim()
@@ -193,6 +193,23 @@ function makeAIButton(text, handler) {
   const btn = createElement('button', { type: 'button', class: 'btn-ai', text });
   btn.addEventListener('click', () => handler(btn));
   return btn;
+}
+
+function buildTechnicalSkillEntry(i) {
+  const entry = createElement('div', { class: 'dynamic-entry', 'data-index': i });
+  const category = makeFormGroup('Category', {
+    type: 'text', class: 'skill-category', placeholder: 'Programming'
+  });
+  const skills = makeFormGroup('Skills', {
+    type: 'text', class: 'skill-values', placeholder: 'Python, C++, JavaScript'
+  });
+  skills.group.appendChild(createElement('small', { text: 'Separate skills with commas' }));
+  const controls = createElement('div', { class: 'entry-controls' });
+  controls.appendChild(makeRemoveButton(entry));
+  entry.appendChild(controls);
+  entry.appendChild(category.group);
+  entry.appendChild(skills.group);
+  return entry;
 }
 
 // Collect, save, show indicator and render — used after any structural DOM change
@@ -307,6 +324,12 @@ const ENTRY_BUILDERS = {
   projects:   buildProjectEntry
 };
 
+function addTechnicalSkillCategory() {
+  const list = document.getElementById('technical-skills-list');
+  list.appendChild(buildTechnicalSkillEntry(list.children.length));
+  saveAndSync();
+}
+
 // ─────────────────────────────────────────────
 // Drag-and-drop reordering within a list
 // ─────────────────────────────────────────────
@@ -372,7 +395,10 @@ function collectFormData() {
       gpa:         node.querySelector('.edu-gpa')?.value.trim()         || ''
     })),
     skills: {
-      technical: document.getElementById('technicalSkills')?.value.trim() || '',
+      technical: [...document.querySelectorAll('#technical-skills-list .dynamic-entry')].map(node => ({
+        category: node.querySelector('.skill-category')?.value.trim() || '',
+        skills:   node.querySelector('.skill-values')?.value.trim()   || ''
+      })),
       soft:      document.getElementById('softSkills')?.value.trim()      || '',
       languages: document.getElementById('languages')?.value.trim()       || ''
     },
@@ -424,6 +450,35 @@ function rebuildEntryList(type, entries = []) {
   return builtEntries;
 }
 
+function normalizeTechnicalSkills(technical) {
+  if (Array.isArray(technical)) {
+    return technical.map(entry => {
+      if (typeof entry === 'string') return { category: 'Technical Skills', skills: entry };
+      entry = entry || {};
+      return {
+        category: entry.category || entry.name || '',
+        skills: entry.skills || entry.value || ''
+      };
+    });
+  }
+  if (typeof technical === 'string' && technical.trim()) {
+    return [{ category: 'Technical Skills', skills: technical.trim() }];
+  }
+  return [{}];
+}
+
+function rebuildTechnicalSkills(entries) {
+  const list = document.getElementById('technical-skills-list');
+  if (!list) return;
+  list.innerHTML = '';
+  normalizeTechnicalSkills(entries).slice(0, 20).forEach((entryData, index) => {
+    const entry = buildTechnicalSkillEntry(index);
+    entry.querySelector('.skill-category').value = entryData.category;
+    entry.querySelector('.skill-values').value = entryData.skills;
+    list.appendChild(entry);
+  });
+}
+
 function loadFromLocalStorage() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -437,7 +492,7 @@ function loadFromLocalStorage() {
     });
 
     const s = data.skills || {};
-    if (s.technical) document.getElementById('technicalSkills').value = s.technical;
+    rebuildTechnicalSkills(s.technical);
     if (s.soft)      document.getElementById('softSkills').value      = s.soft;
     if (s.languages) document.getElementById('languages').value       = s.languages;
 
@@ -528,8 +583,15 @@ function _renderPreview(data) {
         <div class="rv-subtitle">${sanitize(e.institution)}${e.gpa ? ` — GPA: ${sanitize(e.gpa)}` : ''}</div>
       </div>`).join('');
 
+  const technicalSkills = normalizeTechnicalSkills(data.skills.technical);
   const skillsHTML = [
-    data.skills.technical ? `<div class="rv-skill-row"><strong>Technical:</strong> ${sanitize(data.skills.technical)}</div>` : '',
+    ...technicalSkills
+      .filter(entry => entry.category.trim() && entry.skills.trim())
+      .map(entry => {
+        const skills = entry.skills.split(',').map(skill => skill.trim()).filter(Boolean)
+          .map(skill => sanitize(skill)).join(' • ');
+        return skills ? `<div class="rv-skill-row"><strong>${sanitize(entry.category)}:</strong> ${skills}</div>` : '';
+      }),
     data.skills.soft      ? `<div class="rv-skill-row"><strong>Soft Skills:</strong> ${sanitize(data.skills.soft)}</div>`     : '',
     data.skills.languages ? `<div class="rv-skill-row"><strong>Languages:</strong> ${sanitize(data.skills.languages)}</div>`  : ''
   ].filter(Boolean).join('');
@@ -577,7 +639,7 @@ function _renderPreview(data) {
       <div class="rv-contact">${contactParts}</div>`}
       ${summaryText ? `<div class="rv-section"><div class="rv-section-title">Summary</div><p class="rv-summary">${sanitize(summaryText)}</p></div>` : ''}
       ${eduHTML    ? `<div class="rv-section"><div class="rv-section-title">Education</div>${eduHTML}</div>`                                    : ''}
-      ${skillsHTML ? `<div class="rv-section"><div class="rv-section-title">Skills</div><div class="rv-skills-grid">${skillsHTML}</div></div>`  : ''}
+      ${skillsHTML ? `<div class="rv-section"><div class="rv-section-title">Technical Skills</div><div class="rv-skills-grid">${skillsHTML}</div></div>`  : ''}
       ${expHTML    ? `<div class="rv-section"><div class="rv-section-title">Experience</div>${expHTML}</div>`                                   : ''}
       ${projHTML   ? `<div class="rv-section"><div class="rv-section-title">Projects</div>${projHTML}</div>`                                    : ''}
     ${isModern ? '</div>' : ''}`;
@@ -779,6 +841,9 @@ function clearForm() {
     list.innerHTML = '';
     list.appendChild(ENTRY_BUILDERS[type](0));
   });
+  const technicalSkillsList = document.getElementById('technical-skills-list');
+  technicalSkillsList.innerHTML = '';
+  technicalSkillsList.appendChild(buildTechnicalSkillEntry(0));
   document.getElementById('aiSummary').value = '';
 
   // Reset step directly without going through changeStep to avoid stale-state issues
@@ -853,7 +918,8 @@ document.addEventListener('click', (event) => {
     clearForm();
   } else if (target.dataset.addEntry) {
     event.preventDefault();
-    addEntry(target.dataset.addEntry);
+    if (target.dataset.addEntry === 'technical-skills') addTechnicalSkillCategory();
+    else addEntry(target.dataset.addEntry);
   } else if (target.dataset.action === 'improve-bullets') {
     event.preventDefault();
     improveBullets(target);
@@ -890,6 +956,7 @@ loadTemplate();
   list.appendChild(ENTRY_BUILDERS[type](0));
   initDragAndDrop(`${type}-list`);
 });
+rebuildTechnicalSkills();
 loadFromLocalStorage();
 initCSRF();
 
