@@ -639,7 +639,7 @@ function _renderPreview(data) {
       <div class="rv-contact">${contactParts}</div>`}
       ${summaryText ? `<div class="rv-section"><div class="rv-section-title">Summary</div><p class="rv-summary">${sanitize(summaryText)}</p></div>` : ''}
       ${eduHTML    ? `<div class="rv-section"><div class="rv-section-title">Education</div>${eduHTML}</div>`                                    : ''}
-      ${skillsHTML ? `<div class="rv-section"><div class="rv-section-title">Technical Skills</div><div class="rv-skills-grid">${skillsHTML}</div></div>`  : ''}
+      ${skillsHTML ? `<div class="rv-section"><div class="rv-section-title">Skills</div><div class="rv-skills-grid">${skillsHTML}</div></div>`  : ''}
       ${expHTML    ? `<div class="rv-section"><div class="rv-section-title">Experience</div>${expHTML}</div>`                                   : ''}
       ${projHTML   ? `<div class="rv-section"><div class="rv-section-title">Projects</div>${projHTML}</div>`                                    : ''}
     ${isModern ? '</div>' : ''}`;
